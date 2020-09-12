@@ -1,0 +1,52 @@
+Request:
+  Fields:
+    stringField: String
+    intField: Int
+    stringFieldWithValidations:
+      Type: String
+      Validators:
+        Regex:
+          Expression: ^[a-zA-Zа-яА-Я0-9_\\- ]+$
+          Message: Your input is invalid, sry
+        MinLength: 3
+        MaxLength: 24
+        Callback:
+          Errors:
+            - { Code: 322, Message: First callback error }
+            - { Code: 1337, Message: Second callback error }
+            - { Code: 1711, Message: This is seventeen eleven, yo, ShortName: E1711 }
+    enumField:
+      Type: String
+      AllowedValues:
+        - first allowed value
+        - second allowed value
+    optionalEnumField:
+      Type: String
+      DefaultNull: True
+      Validators:
+        In:
+          AllowedValues:
+            - lul
+            - kek
+    uuidField:
+      Type: String
+      Validators:
+        - UUID
+    dateField:
+      Type: String
+      Validators: [ Date ]
+    password1: String
+    password2:
+      Type: String
+      Validators:
+        IdenticalWith:
+          Field: password1
+    boolField: Bool
+    customField: Baz
+    listField: List[String]
+    listCustomField: List[Baz]
+    mapField: List[String:Bool]
+    mapCustomField: List[String:Baz]
+Response:
+  Fields:
+    ok: String
