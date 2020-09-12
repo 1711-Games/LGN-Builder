@@ -1,7 +1,7 @@
 extension Template.Swift {
     static func contracts(from contracts: [String: Contract], service: Service, shared: Shared) -> String {
         contracts
-            .sorted
+            //.sorted
             .map { Template.Swift.contract(from: $1, service: service, shared: shared) }
             .joined(separator: "\n\n")
     }

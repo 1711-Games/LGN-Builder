@@ -43,7 +43,7 @@ extension Entity: Model {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
         }
 
-        var rawFields = rawInput[Key.fields] as? Dict ?? [:]
+        var rawFields = rawInput[Key.fields] as? Dict ?? []
 
         if let rawParentEntity = rawInput[Key.parentEntity] as? String {
             guard
@@ -59,7 +59,7 @@ extension Entity: Model {
                 parentFields[fieldName] = fieldParams
             }
             let excludedFields: [String] = rawInput[Key.excludedFields] as? [String] ?? []
-            rawFields = parentFields.filter { !excludedFields.contains($0.key) }
+            rawFields = parentFields.filter { !excludedFields.contains($0.0) }
         }
 
         let isMutable = rawInput[Key.isMutable] as? Bool ?? false

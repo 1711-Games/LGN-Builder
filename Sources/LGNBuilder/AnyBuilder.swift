@@ -1,7 +1,7 @@
 import Foundation
 import Yams
 
-typealias Dict = [String: Any] // [(Any, Any)]
+typealias Dict = [(String, Any)]
 
 enum E: Error {
     case InvalidSchema(String)
@@ -156,7 +156,7 @@ extension AnyBuilder {
             servicesNames.insert(serviceName)
         }
 
-        let shared: Dict = root["Shared"] as? Dict ?? [:]
+        let shared: Dict = root["Shared"] as? Dict ?? []
 
         return (
             shared: try .init(from: shared),
@@ -180,7 +180,7 @@ extension AnyBuilder {
         }
         print("Successfully written core to \(fileCore.absoluteString)")
 
-        for serviceName in self.services.isEmpty ? Array(schema.services.keys).sorted() : self.services {
+        for serviceName in self.services.isEmpty ? Array(schema.services.keys)/*.sorted()*/ : self.services {
             guard let service = schema.services[serviceName] else {
                 throw E.InvalidSchema(
                     "Requested service '\(serviceName)' not present in schema (\(schema.services.keys)"

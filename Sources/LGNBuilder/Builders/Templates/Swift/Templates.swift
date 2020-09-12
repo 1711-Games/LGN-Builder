@@ -106,7 +106,7 @@ extension Template.Swift {
         """
         public static let list: [String: Service.Type] = [
             \(services
-                .sorted(by: { $0.key < $1.key })
+                //.sorted(by: { $0.key < $1.key })
                 .map { name, _ in "\"\(name)\": \(name).self," }
                 .joined(separator: "\n")
                 .indented(1)

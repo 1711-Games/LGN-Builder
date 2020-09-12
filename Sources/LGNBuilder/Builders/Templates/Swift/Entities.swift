@@ -3,7 +3,7 @@ import Foundation
 extension Template.Swift {
     static func entities(_ entities: [Entity], shared: Shared) -> String {
         entities
-            .sorted(by: { $0.name < $1.name })
+            //.sorted(by: { $0.name < $1.name })
             .map { Template.Swift.entity(from: $0, shared: shared) }
             .joined(separator: "\n\n")
     }
@@ -101,7 +101,7 @@ extension Template.Swift {
         entity
             .fields
             .filter { $0.alwaysInitiated == false }
-            .sorted(by: { $0.name < $1.name })
+            //.sorted(by: { $0.name < $1.name })
             .map { field in
                 "\(field.name): try \(entity.name).extract(param: \"\(field.name)\", from: dictionary\(field.isNullable ? ", isOptional: true" : ""))"
             }
@@ -319,7 +319,7 @@ extension Template.Swift {
         entity
             .fields
             .filter { $0.alwaysInitiated == false }
-            .sorted(by: { $0.name < $1.name })
+            //.sorted(by: { $0.name < $1.name })
             .map { field in
                 "\(field.name): \(prefix)\(field.name)\(forceUnwrap ? "!" : "")"
             }
@@ -338,7 +338,7 @@ extension Template.Swift {
         let resultParts: [String] = entity
             .fields
             .filter { $0.alwaysInitiated == false }
-            .sorted(by: { $0.name < $1.name })
+            //.sorted(by: { $0.name < $1.name })
             .map { field in
                 let fieldName = field.name
                 let argumentName = addFutures && field.canBeFuture ? " \(fieldName)Future" : ""
@@ -392,26 +392,24 @@ extension Template.Swift {
             .filter { field -> Bool in
                 field.validators.contains(where: { ($0 as? Validator.Callback)?.errors.count ?? 0 > 0 })
             }
-            .map { (field) -> (field: Field, enums: [String: Validator.Callback.Error]) in
+            .map { (field) -> (field: Field, enums: [(String, Validator.Callback.Error)]) in
                 return (
                     field: field,
-                    enums: .init(
-                        uniqueKeysWithValues: (field.validators.first(where: { $0 is Validator.Callback }) as! Validator.Callback)
-                            .errors
-                            .map { error in
-                                (
-                                    getShortName(from: error),
-                                    error
-                                )
-                            }
-                    )
+                    enums: (field.validators.first(where: { $0 is Validator.Callback }) as! Validator.Callback)
+                        .errors
+                        .map { error in
+                            (
+                                getShortName(from: error),
+                                error
+                            )
+                        }
                 )
             }
             .map(Template.Swift.enum)
             .joined(separator: "\n\n")
     }
 
-    static func `enum`(field: Field, enums: [String: Validator.Callback.Error]) -> String {
+    static func `enum`(field: Field, enums: [(String, Validator.Callback.Error)]) -> String {
         """
         public enum CallbackValidator\(field.name.capitalized)AllowedValues: String, CallbackWithAllowedValuesRepresentable, ValidatorErrorRepresentable {
             public typealias InputValue = \(field.type.asString)

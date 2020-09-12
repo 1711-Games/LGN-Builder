@@ -81,7 +81,7 @@ extension Template.Swift {
                 contracts.isEmpty
                     ? ":"
                     : contracts
-                        .sorted
+                        //.sorted
                         .map { name, _ in "Contracts.\(name).URI: Contracts.\(name).isGuaranteed," }
                         .joined(separator: "\n")
                         .indented(1)
@@ -97,7 +97,7 @@ extension Template.Swift {
                 contracts.isEmpty
                     ? ":"
                     : contracts
-                        .sorted
+                        //.sorted
                         .map { name, _ in "Contracts.\(name).URI: Contracts.\(name).self," }
                         .joined(separator: "\n")
                         .indented(1)
@@ -108,7 +108,7 @@ extension Template.Swift {
 
     static func callbackSetters(from contracts: [String: Contract]) -> String {
         contracts
-            .sorted
+            //.sorted
             .compactMap { name, contract in
                 if !contract.generateServiceWiseGuarantee {
                     return nil
@@ -136,7 +136,7 @@ extension Template.Swift {
 
     static func contractClientExecutors(from contracts: [String: Contract]) -> String {
         contracts
-            .sorted
+            //.sorted
             .compactMap { name, contract in
                 if !contract.generateServiceWiseExecutors {
                     return nil
@@ -191,7 +191,7 @@ extension Template.Swift {
 
     static func sharedTypealiases(shared: Shared) -> String {
         shared.entities
-            .sorted(by: { $0.name < $1.name })
+            //.sorted(by: { $0.name < $1.name })
             .map { entity in "typealias \(entity.name) = Services.Shared.\(entity.name)" }
             .joined(separator: "\n")
     }
@@ -200,7 +200,7 @@ extension Template.Swift {
         """
         public static let keyDictionary: [String: Entita.Dict] = [
             \(contracts
-                .sorted
+                //.sorted
                 .map { _, contract in
                     """
                     "\(contract.name)": [

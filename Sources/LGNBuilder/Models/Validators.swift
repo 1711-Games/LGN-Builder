@@ -180,11 +180,11 @@ enum Validator {
         required init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
 
-            guard let rawInput = input as? Dict else {
+            guard let rawInput = input as? [String: Any] else {
                 throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
             }
 
-            self.message = try Self.getMessage(from: rawInput)
+            self.message = try Self.getMessage(from: rawInput.map { $0 }) // dr_hax.exe
 
             guard let length = rawInput[Key.length] as? Int else {
                 throw E.InvalidSchema("\(errorPrefix): missing or invalid key \(Key.length.rawValue)")
