@@ -17,9 +17,6 @@ struct Build: ParsableCommand {
     )
     var language: Builder.Language
 
-    @Option(name: [.long, .customLong("tpl-dir")], help: "Directory with templates")
-    var templateDirectory: String
-
     @Option(name: .shortAndLong, help: "Directory with contracts schema")
     var input: String
 
@@ -44,30 +41,6 @@ struct Build: ParsableCommand {
         }
 
         let manager = FileManager.default
-
-        guard manager.isReadableFile(atPath: self.templateDirectory) else {
-            throw ValidationError(
-                "Invalid template directory '\(self.templateDirectory)' (doesn't exist or is not readable)"
-            )
-        }
-        var templateDirectoryURL = URL(fileURLWithPath: self.templateDirectory, isDirectory: true)
-        guard try templateDirectoryURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
-            throw ValidationError(
-                "Invalid template directory '\(self.templateDirectory)' (isn't a directory)"
-            )
-        }
-        let templateDirectoryWithLang = templateDirectoryURL.path + "/" + self.language.rawValue + "/"
-        guard manager.isReadableFile(atPath: templateDirectoryWithLang) else {
-            throw ValidationError(
-                "Invalid template directory '\(templateDirectoryWithLang)' (doesn't exist or is not readable)"
-            )
-        }
-        templateDirectoryURL.appendPathComponent(self.language.rawValue, isDirectory: true)
-        guard try templateDirectoryURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
-            throw ValidationError(
-                "Invalid template directory '\(templateDirectoryURL)' (isn't a directory)"
-            )
-        }
 
         guard manager.isReadableFile(atPath: self.input) else {
             throw ValidationError(
@@ -96,7 +69,6 @@ struct Build: ParsableCommand {
         try Builder
             .create(from: self.language)
             .init(
-                templateDirectory: templateDirectoryURL,
                 inputDirectory: inputDirectoryURL,
                 outputDirectory: outputDirectoryURL,
                 services: self.services,

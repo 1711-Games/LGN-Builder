@@ -2,7 +2,6 @@ import Foundation
 
 public extension Builder {
     struct Swift: AnyBuilder {
-        public let templateDirectory: URL
         public let inputDirectory: URL
         public let outputDirectory: URL
         public let services: [String]
@@ -10,14 +9,12 @@ public extension Builder {
         public let emitSchema: Bool
 
         public init(
-            templateDirectory: URL,
             inputDirectory: URL,
             outputDirectory: URL,
             services: [String],
             dryRun: Bool,
             emitSchema: Bool
         ) throws {
-            self.templateDirectory = templateDirectory
             self.inputDirectory = inputDirectory
             self.outputDirectory = outputDirectory
             self.services = services

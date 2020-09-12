@@ -11,7 +11,6 @@ protocol AnyBuilder {
     typealias Schema = (shared: Shared, services: [String: Service])
 
     var compiledSchemaFilename: String { get }
-    var templateDirectory: URL { get }
     var inputDirectory: URL { get }
     var outputDirectory: URL { get }
     var services: [String] { get }
@@ -19,7 +18,6 @@ protocol AnyBuilder {
     var emitSchema: Bool { get }
 
     init(
-        templateDirectory: URL,
         inputDirectory: URL,
         outputDirectory: URL,
         services: [String],
