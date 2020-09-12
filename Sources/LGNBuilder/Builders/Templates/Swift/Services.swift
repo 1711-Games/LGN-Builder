@@ -59,19 +59,23 @@ extension Template.Swift {
     }
 
     static func info(from info: [String: String]) -> String {
-        guard !info.isEmpty else {
-            return ""
+        var result = "public static let info: [String: String] = "
+
+        if info.isEmpty {
+            result += "[:]"
+        } else {
+            result += """
+            [
+                \(info
+                    .map { k, v in "\"\(k)\": \"\(v)\"," }
+                    .joined(separator: "\n")
+                    .indented(1)
+                )
+            ]
+            """
         }
 
-        return """
-        public static let info: [String: String] = [
-            \(info
-                .map { k, v in "\"\(k)\": \"\(v)\"," }
-                .joined(separator: "\n")
-                .indented(1)
-            )
-        ]
-        """
+        return result
     }
 
     static func guaranteeStatuses(from contracts: [String: Contract]) -> String {

@@ -4,6 +4,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 set -euo pipefail
 
-swift build -c debug
+swift build --package-path ${DIR}/.. -c debug 
 
 ${DIR}/../.build/debug/LGNBuilder "$@"
