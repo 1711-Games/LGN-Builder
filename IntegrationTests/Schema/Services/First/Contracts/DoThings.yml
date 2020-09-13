@@ -7,14 +7,14 @@ Request:
       Validators:
         Regex:
           Expression: ^[a-zA-Zа-яА-Я0-9_\\- ]+$
-          Message: Your input is invalid, sry
+          Message: "Your input is invalid, sry"
         MinLength: 3
         MaxLength: 24
         Callback:
           Errors:
             - { Code: 322, Message: First callback error }
             - { Code: 1337, Message: Second callback error }
-            - { Code: 1711, Message: This is seventeen eleven, yo, ShortName: E1711 }
+            - { Code: 1711, Message: "This is seventeen eleven, yo", ShortName: E1711 }
     enumField:
       Type: String
       AllowedValues:
@@ -49,4 +49,4 @@ Request:
     mapCustomField: List[String:Baz]
 Response:
   Fields:
-    ok: String
+    ok: List[String]
