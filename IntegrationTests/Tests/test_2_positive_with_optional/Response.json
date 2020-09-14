@@ -15,7 +15,7 @@
             "listCustomField           : [[Gerreg:true,Tlaalt:false],[Gerreg:false,Tlaalt:true]]",
             "mapField                  : [kek:false,lul:true]",
             "mapCustomField            : [1377:[Gerreg:true,Tlaalt:false]]",
-            "optionalEnumField         : kek",
+            "optionalEnumField         : lul",
         ]
     },
     "success": true,
