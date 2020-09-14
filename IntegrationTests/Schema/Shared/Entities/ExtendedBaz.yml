@@ -1,0 +1,4 @@
+ParentEntity: Baz
+ExcludeFields: [ Gerreg ]
+Fields:
+  Brrrr: String
