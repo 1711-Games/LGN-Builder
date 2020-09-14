@@ -1,0 +1,7 @@
+Info:
+  Key1: Value1
+  Key2: Value2
+
+Transports:
+  LGNS: 1711
+  HTTP: 1337
