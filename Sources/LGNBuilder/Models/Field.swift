@@ -135,7 +135,7 @@ extension Field: Model {
     }
 
     init(name: String, from input: Any) throws {
-        let errorPrefix = "Could not decode field"
+        let errorPrefix = "Could not decode field '\(name)'"
 
         if let type = input as? String {
             self = Self.init(

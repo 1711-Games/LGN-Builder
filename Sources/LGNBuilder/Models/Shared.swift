@@ -19,8 +19,8 @@ final class Shared {
 
         self.init(dateFormat: rawInput[Key.dateFormat] as? String)
 
-        self.entities = try (rawInput[Key.entities] as? Dict ?? Dict()).map { entityName, rawEntity in
-            try Entity(name: entityName, from: rawEntity, shared: self)
+        for (entityName, rawEntity) in (rawInput[Key.entities] as? Dict ?? Dict()) {
+            self.entities.append(try Entity(name: entityName, from: rawEntity, shared: self))
         }
     }
 

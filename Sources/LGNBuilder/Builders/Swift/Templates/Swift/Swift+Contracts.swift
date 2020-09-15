@@ -37,11 +37,11 @@ extension Template.Swift {
     }
 
     static func entityTypealias(from entityType: EntityType, name: String) -> String {
-        guard case .shared(let entityName) = entityType else {
+        guard case .shared(let entity) = entityType else {
             return ""
         }
 
-        return "public typealias \(name) = \(entityType.isSharedEmpty ? "LGNC.Entity" : "Services.Shared").\(entityName)"
+        return "public typealias \(name) = \(entityType.isSharedEmpty ? "LGNC.Entity" : "Services.Shared").\(entity.name)"
     }
 
     static func entityTypealiases(from contract: Contract) -> String {

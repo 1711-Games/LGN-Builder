@@ -19,7 +19,7 @@ struct Entity {
     let futureField: String?
     let isMutable: Bool
     let keyDictionary: [String: String]
-    let isSystem: Bool = false
+    let isSystem: Bool
 
     init(
         name: String,
@@ -36,6 +36,7 @@ struct Entity {
         self.futureField = futureField
         self.isMutable = isMutable
         self.keyDictionary = keyDictionary
+        self.isSystem = isSystem
     }
 }
 
@@ -53,9 +54,7 @@ extension Entity: Model {
     }
 
     init(name: String, from input: Any, shared: Shared) throws {
-        self.name = name
-
-        let errorPrefix = "Could not decode entity"
+        let errorPrefix = "Could not decode entity '\(name)'"
 
         guard let rawInput = input as? Dict else {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
@@ -84,11 +83,15 @@ extension Entity: Model {
             }
         }
 
-        self.fields = fields
-        self.needsAwait = fields.reduce(false, { $1.canBeFuture })
-        self.futureField = fields.first(where: { $0.canBeFuture })?.name
-        self.isMutable = rawInput[Key.isMutable] as? Bool ?? false
-        self.keyDictionary = [:] // todo
+        self = Self(
+            name: name,
+            fields: fields,
+            needsAwait: fields.reduce(false, { $1.canBeFuture }),
+            futureField: fields.first(where: { $0.canBeFuture })?.name,
+            isMutable: rawInput[Key.isMutable] as? Bool ?? false,
+            keyDictionary: [:], // todo
+            isSystem: false
+        )
     }
 }
 

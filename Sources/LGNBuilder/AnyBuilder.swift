@@ -7,6 +7,18 @@ enum E: Error {
     case InvalidSchema(String)
 }
 
+extension E: CustomStringConvertible {
+    var description: String {
+        let result: String
+
+        switch self {
+        case .InvalidSchema(let error): result = "InvalidSchema: \(error)"
+        }
+
+        return result
+    }
+}
+
 protocol AnyBuilder {
     typealias Schema = (shared: Shared, services: [String: Service])
 

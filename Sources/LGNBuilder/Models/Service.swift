@@ -24,7 +24,7 @@ extension Service: Model {
     init(name: String, from input: Any, shared: Shared) throws {
         self.name = name
 
-        let errorPrefix = "Could not decode service"
+        let errorPrefix = "Could not decode service '\(name)'"
 
         guard var rawInput = input as? Dict else {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
