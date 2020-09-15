@@ -59,9 +59,6 @@ extension Entity: Model {
         guard let rawInput = input as? Dict else {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
         }
-        guard let rawFields = rawInput[Key.fields] as? Dict else {
-            throw E.InvalidSchema("\(errorPrefix): input does not contain '\(Key.fields)' key (input: \(rawInput))")
-        }
 
         var fields = [Field]()
 
@@ -74,6 +71,9 @@ extension Entity: Model {
             fields = parentEntity.fields.filter { !excludedFields.contains($0.name) }
         }
 
+        // Even though an entity must have at least one field, we don't do this kind of validation here because
+        // entity might have parent entity + excluded fields, and thus there migth be no need to have `Fields` key.
+        let rawFields = rawInput[Key.fields] as? Dict ?? Dict()
         for (fieldName, fieldParams) in rawFields {
             let field = try Field(name: fieldName, from: fieldParams)
             if let existingFieldIndex = fields.firstIndex(where: { $0.name == field.name }) {
@@ -83,10 +83,14 @@ extension Entity: Model {
             }
         }
 
+        guard fields.count > 0 else {
+            throw E.InvalidSchema("\(errorPrefix): there are no fields in this entity")
+        }
+
         self = Self(
             name: name,
             fields: fields,
-            needsAwait: fields.reduce(false, { $1.canBeFuture }),
+            needsAwait: fields.reduce(false, { $0 || $1.canBeFuture }),
             futureField: fields.first(where: { $0.canBeFuture })?.name,
             isMutable: rawInput[Key.isMutable] as? Bool ?? false,
             keyDictionary: [:], // todo

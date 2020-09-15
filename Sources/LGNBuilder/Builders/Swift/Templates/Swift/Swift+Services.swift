@@ -150,7 +150,7 @@ extension Template.Swift {
                     at address: LGNCore.Address,
                     with request: Contracts.\(name).Request,
                     using client: LGNCClient
-                ) -> Future<Contracts.\(name).Response> {
+                ) -> EventLoopFuture<Contracts.\(name).Response> {
                     return Contracts.\(name).execute(at: address, with: request, using: client)
                 }
                 """

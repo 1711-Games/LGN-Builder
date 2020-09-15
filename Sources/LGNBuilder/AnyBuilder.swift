@@ -160,6 +160,9 @@ extension AnyBuilder {
 
         var servicesNames: Set<String> = []
         for (serviceName, _) in rawServices {
+            if self.services.count > 0 && !self.services.contains(serviceName) {
+                continue
+            }
             guard !servicesNames.contains(serviceName) else {
                 throw E.InvalidSchema("Service '\(serviceName)' is defined more than once (must be unique)")
             }
@@ -171,9 +174,11 @@ extension AnyBuilder {
         return (
             shared: shared,
             services: try .init(
-                uniqueKeysWithValues: rawServices.map { serviceName, rawService in
-                    (serviceName, try Service(name: serviceName, from: rawService, shared: shared))
-                }
+                uniqueKeysWithValues: rawServices
+                    .filter { serviceName, _ in servicesNames.contains(serviceName) }
+                    .map { serviceName, rawService in
+                        (serviceName, try Service(name: serviceName, from: rawService, shared: shared))
+                    }
             )
         )
     }
