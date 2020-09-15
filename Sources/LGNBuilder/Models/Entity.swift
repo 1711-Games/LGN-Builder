@@ -1,12 +1,12 @@
 enum EntityType {
     case entity(Entity)
-    case shared(String)
+    case shared(Entity)
 }
 
 extension EntityType {
     var isSharedEmpty: Bool {
-        if case .shared(let name) = self {
-            return name == Contract.emptyEntity
+        if case .shared(let entity) = self {
+            return entity.isSystem && entity.name == Entity.emptyEntityName
         }
         return false
     }
@@ -19,6 +19,24 @@ struct Entity {
     let futureField: String?
     let isMutable: Bool
     let keyDictionary: [String: String]
+    let isSystem: Bool = false
+
+    init(
+        name: String,
+        fields: [Field],
+        needsAwait: Bool,
+        futureField: String?,
+        isMutable: Bool,
+        keyDictionary: [String : String],
+        isSystem: Bool = false
+    ) {
+        self.name = name
+        self.fields = fields
+        self.needsAwait = needsAwait
+        self.futureField = futureField
+        self.isMutable = isMutable
+        self.keyDictionary = keyDictionary
+    }
 }
 
 extension Entity: Model {
@@ -34,7 +52,7 @@ extension Entity: Model {
         throw E.InvalidSchema("Use init(name:from:shared:) instead")
     }
 
-    init(name: String, from input: Any, shared: Dict) throws {
+    init(name: String, from input: Any, shared: Shared) throws {
         self.name = name
 
         let errorPrefix = "Could not decode entity"
@@ -42,42 +60,48 @@ extension Entity: Model {
         guard let rawInput = input as? Dict else {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
         }
+        guard let rawFields = rawInput[Key.fields] as? Dict else {
+            throw E.InvalidSchema("\(errorPrefix): input does not contain '\(Key.fields)' key (input: \(rawInput))")
+        }
 
-        var rawFields = Dict()
+        var fields = [Field]()
 
-        if let rawParentEntity = rawInput[Key.parentEntity] as? String {
-            guard
-                let sharedEntities = shared["Entities"] as? Dict,
-                let parentEntity = sharedEntities[rawParentEntity] as? Dict,
-                var parentFields = parentEntity["Fields"] as? Dict
-            else {
-                throw E.InvalidSchema(
-                    "\(errorPrefix): parent entity '\(rawParentEntity)' not present in Shared entities"
+        if let parentEntityName = rawInput[Key.parentEntity] as? String {
+            guard let parentEntity = shared.getEntity(byName: parentEntityName) else {
+                throw E.InvalidSchema("\(errorPrefix): parent entity '\(parentEntityName)' not present in Shared entities"
                 )
             }
-            for (fieldName, fieldParams) in rawFields {
-                parentFields[fieldName] = fieldParams
-            }
             let excludedFields: [String] = rawInput[Key.excludedFields] as? [String] ?? []
-            rawFields = parentFields.filter { !excludedFields.contains($0.0) }
+            fields = parentEntity.fields.filter { !excludedFields.contains($0.name) }
         }
 
-        for (k, v) in rawInput[Key.fields] as? Dict ?? Dict() {
-            rawFields[k] = v
-        }
-
-        let isMutable = rawInput[Key.isMutable] as? Bool ?? false
-
-        let fields: [Field] = try rawFields.map {
-            try Field(name: $0, from: $1)
+        for (fieldName, fieldParams) in rawFields {
+            let field = try Field(name: fieldName, from: fieldParams)
+            if let existingFieldIndex = fields.firstIndex(where: { $0.name == field.name }) {
+                fields[existingFieldIndex] = field
+            } else {
+                fields.append(field)
+            }
         }
 
         self.fields = fields
         self.needsAwait = fields.reduce(false, { $1.canBeFuture })
         self.futureField = fields.first(where: { $0.canBeFuture })?.name
-        self.isMutable = isMutable
-        self.keyDictionary = [:]
+        self.isMutable = rawInput[Key.isMutable] as? Bool ?? false
+        self.keyDictionary = [:] // todo
     }
 }
 
-// TODO: key dictionary
+extension Entity {
+    static let emptyEntityName = "Empty"
+
+    static let empty: Self = Self(
+        name: Self.emptyEntityName,
+        fields: [],
+        needsAwait: false,
+        futureField: nil,
+        isMutable: false,
+        keyDictionary: [:],
+        isSystem: true
+    )
+}

@@ -154,10 +154,10 @@ extension AnyBuilder {
             servicesNames.insert(serviceName)
         }
 
-        let shared: Dict = root["Shared"] as? Dict ?? []
+        let shared: Shared = try .init(from: root["Shared"] as? Dict ?? [])
 
         return (
-            shared: try .init(from: shared),
+            shared: shared,
             services: try .init(
                 uniqueKeysWithValues: rawServices.map { serviceName, rawService in
                     (serviceName, try Service(name: serviceName, from: rawService, shared: shared))

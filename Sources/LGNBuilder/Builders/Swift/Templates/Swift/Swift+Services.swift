@@ -170,7 +170,7 @@ extension Template.Swift {
 
                     switch entityType {
                     case let .entity(_entity): entity = _entity
-                    case let .shared(name): entity = shared.entities.first(where: { $0.name == name})!
+                    case let .shared(_entity): entity = _entity
                     }
 
                     for (name, (type, errors)) in entity.validationCallbacks {

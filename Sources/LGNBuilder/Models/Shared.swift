@@ -1,23 +1,32 @@
-struct Shared {
-    let entities: [Entity]
-    let dateFormat: String?
-}
-
-extension Shared: Model {
+final class Shared {
     enum Key: String {
         case entities = "Entities"
         case dateFormat = "DateFormat"
     }
 
-    init(from input: Any) throws {
+    var entities: [Entity] = []
+    let dateFormat: String?
+
+    init(dateFormat: String?) {
+        self.dateFormat = dateFormat
+    }
+
+    convenience init(from input: Any) throws {
         guard let rawInput = input as? Dict else {
-            self = Self(entities: [], dateFormat: nil)
+            self.init(dateFormat: nil)
             return
         }
 
+        self.init(dateFormat: rawInput[Key.dateFormat] as? String)
+
         self.entities = try (rawInput[Key.entities] as? Dict ?? Dict()).map { entityName, rawEntity in
-            try Entity(name: entityName, from: rawEntity, shared: rawInput)
+            try Entity(name: entityName, from: rawEntity, shared: self)
         }
-        self.dateFormat = rawInput[Key.dateFormat] as? String
+    }
+
+    func getEntity(byName name: String) -> Entity? {
+        name == Entity.emptyEntityName
+            ? .empty
+            : self.entities.first(where: { $0.name == name })
     }
 }

@@ -1,6 +1,7 @@
 indirect enum FieldType {
     case String
     case Int
+    case Float
     case Bool
     case List(FieldType)
     case Map(String, FieldType)
@@ -58,6 +59,7 @@ extension FieldType {
         case .String: result = "String"
         case .Int: result = "Int"
         case .Bool: result = "Bool"
+        case .Float: result = "Float"
         case let .List(list): result = "List[\(list.asString)]"
         case let .Map(key, value): result = "Map[\(key):\(value.asString)]"
         case let .Custom(name): result = name
@@ -95,6 +97,7 @@ extension FieldType {
         case "String": result = .String
         case "Int": result = .Int
         case "Bool": result = .Bool
+        case "Float": result = .Float
         case let str where str.starts(with: listPrefix):
             result = try .List(Self.init(from: Swift.String(string.dropFirst(listPrefix.count).dropLast(1))))
         case let str where str.starts(with: "Map["):
@@ -114,7 +117,6 @@ extension FieldType {
 extension Field: Model {
     enum Key: String {
         case type = "Type"
-        case parentEntity = "ParentEntity"
         case validators = "Validators"
         case canBeFuture = "CanBeFuture"
         case isNotEmpty = "NotEmpty"

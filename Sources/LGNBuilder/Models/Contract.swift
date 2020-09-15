@@ -28,17 +28,15 @@ extension Contract: Model {
         case isPublic = "IsPublic"
     }
 
-    static let emptyEntity = "Empty"
-
     @available(*, deprecated, message: "Use init(name:from:allowedTransports:)")
     init(from input: Any) throws {
         throw E.InvalidSchema("Use init(name:from:allowedTransports:)")
     }
 
-    init(name: String, from input: Any, allowedTransports: [Transport], shared: Dict) throws {
+    init(name: String, from input: Any, allowedTransports: [Transport], shared: Shared) throws {
         self.name = name
 
-        let errorPrefix = "Could not decode contract"
+        let errorPrefix = "Could not decode contract '\(name)'"
 
         guard var rawInput = input as? Dict else {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
@@ -81,20 +79,25 @@ extension Contract: Model {
         self.isPublic = rawInput[Key.isPublic] as? Bool ?? false
 
         if rawInput[Key.request] == nil {
-            rawInput[Key.request] = Self.emptyEntity
+            rawInput[Key.request] = Entity.emptyEntityName
         }
         if rawInput[Key.response] == nil {
-            rawInput[Key.response] = Self.emptyEntity
+            rawInput[Key.response] = Entity.emptyEntityName
         }
 
         let request: EntityType
         guard rawInput[Key.request] != nil else {
             throw E.InvalidSchema(
-                "\(errorPrefix): missing or invalid key '\(Key.request.rawValue)' '(input: \(input)')"
+                "\(errorPrefix): missing or invalid key '\(Key.request.rawValue)' '(input: \(rawInput)')"
             )
         }
         if let rawRequest = rawInput[Key.request] as? String {
-            request = .shared(rawRequest)
+            guard let sharedRequestEntity = shared.getEntity(byName: rawRequest) else {
+                throw E.InvalidSchema(
+                    "\(errorPrefix): could not find request entity '\(rawRequest)' in shared '(input: \(rawInput)')"
+                )
+            }
+            request = .shared(sharedRequestEntity)
         } else {
             request = try .entity(Entity(
                 name: "Request",
@@ -107,11 +110,16 @@ extension Contract: Model {
         let response: EntityType
         guard rawInput[Key.response] != nil else {
             throw E.InvalidSchema(
-                "\(errorPrefix): missing or invalid key '\(Key.response.rawValue)' '(input: \(input)')"
+                "\(errorPrefix): missing or invalid key '\(Key.response.rawValue)' '(input: \(rawInput)')"
             )
         }
         if let rawResponse = rawInput[Key.response] as? String {
-            response = .shared(rawResponse)
+            guard let sharedResponseEntity = shared.getEntity(byName: rawResponse) else {
+                throw E.InvalidSchema(
+                    "\(errorPrefix): could not find response entity '\(rawResponse)' in shared '(input: \(rawInput)')"
+                )
+            }
+            response = .shared(sharedResponseEntity)
         } else {
             response = try .entity(Entity(
                 name: "Response",

@@ -21,7 +21,7 @@ extension Service: Model {
         throw E.InvalidSchema("Use init(name:from:shared:) instead")
     }
 
-    init(name: String, from input: Any, shared: Dict) throws {
+    init(name: String, from input: Any, shared: Shared) throws {
         self.name = name
 
         let errorPrefix = "Could not decode service"
