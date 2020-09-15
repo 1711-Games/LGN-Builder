@@ -180,7 +180,7 @@ enum Validator {
         required init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
 
-            guard let rawInput = input as? [String: Any] else {
+            guard let rawInput = input as? Dict else {
                 throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
             }
 
