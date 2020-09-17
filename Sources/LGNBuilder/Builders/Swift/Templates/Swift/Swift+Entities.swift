@@ -36,7 +36,7 @@ extension Template.Swift {
             .map { field in
                 """
                 public static func initialize\(field.name)(_ callback: @escaping \(Template.Swift.callbackInitializerType(field: field, entityName: entity.name)) {
-                    self.initializer\(field.name.capitalized)Closure = callback
+                    self.initializer\(field.name.firstUppercased)Closure = callback
                 }
                 """
             }
@@ -50,10 +50,10 @@ extension Template.Swift {
                 let (type, errors) = tuple
                 let callbackType = Template.Swift.validationCallbackType(fieldName: name, type: type, errors: errors)
                 return """
-                public static func validate\(name.capitalized)(
+                public static func validate\(name.firstUppercased)(
                     _ callback: @escaping \(callbackType).Callback
                 ) {
-                    self.validator\(name.capitalized)Closure = callback
+                    self.validator\(name.firstUppercased)Closure = callback
                 }
                 """
             }
@@ -275,7 +275,7 @@ extension Template.Swift {
         case let validator as Validator.Callback:
             result =
                 """
-                guard \(ifOptional(field: field))let validator = self.validator\(field.name.capitalized)Closure else {
+                guard \(ifOptional(field: field))let validator = self.validator\(field.name.firstUppercased)Closure else {
                     \(succ)
                 }
                 return \(Template.Swift.callbackValidatorType(fieldName: field.name, type: field.type, errors: validator.errors))(callback: validator).validate(
@@ -411,7 +411,7 @@ extension Template.Swift {
 
     static func `enum`(field: Field, enums: [(String, Validator.Callback.Error)]) -> String {
         """
-        public enum CallbackValidator\(field.name.capitalized)AllowedValues: String, CallbackWithAllowedValuesRepresentable, ValidatorErrorRepresentable {
+        public enum CallbackValidator\(field.name.firstUppercased)AllowedValues: String, CallbackWithAllowedValuesRepresentable, ValidatorErrorRepresentable {
             public typealias InputValue = \(field.type.asString)
 
             \(enums
@@ -464,7 +464,7 @@ extension Template.Swift {
             .map { (name: String, tuple) in
                 let (type, errors) = tuple
                 let callbackType = Template.Swift.validationCallbackType(fieldName: name, type: type, errors: errors)
-                return "private static var validator\(name.capitalized)Closure: \(callbackType).Callback? = nil"
+                return "private static var validator\(name.firstUppercased)Closure: \(callbackType).Callback? = nil"
             }
             .joined(separator: "\n")
     }
@@ -478,7 +478,7 @@ extension Template.Swift {
         var result = "Validation.Callback"
 
         if errors.count > 0 {
-            result += "WithAllowedValues<\(prefix)CallbackValidator\(fieldName.capitalized)AllowedValues>"
+            result += "WithAllowedValues<\(prefix)CallbackValidator\(fieldName.firstUppercased)AllowedValues>"
         } else {
             result += "<\(type.asString)>"
         }
@@ -490,7 +490,7 @@ extension Template.Swift {
         entity
             .initializerCallbacks
             .map { field in
-                "private static var initializer\(field.name.capitalized)Closure: (\(Template.Swift.callbackInitializerType(field: field, entityName: entity.name)))? = nil"
+                "private static var initializer\(field.name.firstUppercased)Closure: (\(Template.Swift.callbackInitializerType(field: field, entityName: entity.name)))? = nil"
             }
             .joined(separator: "\n")
     }

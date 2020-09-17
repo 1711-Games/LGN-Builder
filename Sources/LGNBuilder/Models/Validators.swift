@@ -35,29 +35,48 @@ extension AnyValidator {
 }
 
 enum Validator {
-    static func initFrom(name: String, params: Any) throws -> AnyValidator {
+    enum Name: String {
+        case Regex
+        case In
+        case NotEmpty
+        case UUID
+        case MinLength
+        case MaxLength
+        case IdenticalWith
+        case Date
+        case Callback
+
+        init(from rawName: String) throws {
+            guard let value = Self(rawValue: rawName) else {
+                throw E.InvalidSchema("Unknown validator '\(rawName)'")
+            }
+
+            self = value
+        }
+    }
+
+    static func initFrom(name rawName: String, params: Any) throws -> AnyValidator {
         let result: AnyValidator.Type
 
-        switch name {
-        case "Regex":         result = Regex.self
-        case "In":            result = In.self
-        case "NotEmpty":      result = NotEmpty.self
-        case "UUID":          result = UUID.self
-        case "MinLength":     result = MinLength.self
-        case "MaxLength":     result = MaxLength.self
-        case "IdenticalWith": result = IdenticalWith.self
-        case "Date":          result = Date.self
-        case "Callback":      result = Callback.self
-        default: throw E.InvalidSchema("Unknown validator '\(name)'")
+        switch try Name(from: rawName) {
+        case .Regex:         result = Regex.self
+        case .In:            result = In.self
+        case .NotEmpty:      result = NotEmpty.self
+        case .UUID:          result = UUID.self
+        case .MinLength:     result = MinLength.self
+        case .MaxLength:     result = MaxLength.self
+        case .IdenticalWith: result = IdenticalWith.self
+        case .Date:          result = Date.self
+        case .Callback:      result = Callback.self
         }
 
         return try result.init(from: params)
     }
 
-    static func initFrom(name: String) throws -> AnyValidator {
-        switch name {
-        case "NotEmpty", "UUID", "Date": return try Self.initFrom(name: name, params: Dict())
-        default: throw E.InvalidSchema("Validator '\(name)' cannot be initiated by only name")
+    static func initFrom(name rawName: String) throws -> AnyValidator {
+        switch try Name(from: rawName) {
+        case .NotEmpty, .UUID, .Date, .Callback: return try Self.initFrom(name: rawName, params: Dict())
+        default: throw E.InvalidSchema("Validator '\(rawName)' cannot be initiated by only name")
         }
     }
 
@@ -159,23 +178,6 @@ enum Validator {
 
         let message: String?
         let length: Int
-
-//        static func initFrom(kind: String, length: Int) throws -> AnyValidator {
-//            let result: Length.Type
-//
-//            switch kind {
-//            case "MinLength": result = MinLength.self
-//            case "MaxLength": result = MaxLength.self
-//            default: throw E.InvalidSchema("Invalid Length validator '\(kind)'")
-//            }
-//
-//            return result.init(message: nil, length: length)
-//        }
-//
-//        required init(message: String?, length: Int) {
-//            self.message = message
-//            self.length = length
-//        }
 
         required init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
@@ -290,8 +292,14 @@ enum Validator {
                 throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
             }
 
-            guard let rawErrors = rawInput[Key.errors] as? [Any] else {
-                throw E.InvalidSchema("\(errorPrefix): missing or invalid key '\(Key.errors.rawValue)'")
+            let rawErrors: [Any]
+            if rawInput[Key.errors] == nil {
+                rawErrors = []
+            } else {
+                guard let _rawErrors = rawInput[Key.errors] as? [Any] else {
+                    throw E.InvalidSchema("\(errorPrefix): missing or invalid key '\(Key.errors.rawValue)'")
+                }
+                rawErrors = _rawErrors
             }
 
             self.errors = try rawErrors.map { try Error(from: $0) }

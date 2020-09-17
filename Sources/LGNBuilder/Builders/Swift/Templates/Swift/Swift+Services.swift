@@ -177,10 +177,10 @@ extension Template.Swift {
                         let prefix = "Contracts." + contractName + "." + entityName + "."
                         result.append(
                             """
-                            public static func validateContract\(contractName)Field\(name.capitalized)(
+                            public static func validateContract\(contractName)Field\(name.firstUppercased)(
                                 _ callback: @escaping \(self.callbackValidatorType(fieldName: name, type: type, errors: errors, prefix: prefix)).Callback
                             ) {
-                                \(prefix)validate\(name.capitalized)(callback)
+                                \(prefix)validate\(name.firstUppercased)(callback)
                             }
                             """
                         )

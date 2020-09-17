@@ -59,3 +59,8 @@ internal extension Dictionary where Key == String, Value == Contract {
         self.sorted(by: { $0.key < $1.key })
     }
 }
+
+internal extension StringProtocol {
+    @usableFromInline
+    var firstUppercased: String { prefix(1).uppercased() + dropFirst() }
+}

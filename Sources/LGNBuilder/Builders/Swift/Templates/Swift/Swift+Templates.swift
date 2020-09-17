@@ -130,7 +130,7 @@ extension Template.Swift {
     }
 
     static func callbackValidatorEnumName(fieldName: String) -> String {
-        "CallbackValidator\(fieldName.capitalized)AllowedValues"
+        "CallbackValidator\(fieldName.firstUppercased)AllowedValues"
     }
 
     static func callbackValidatorType(
