@@ -1,8 +1,9 @@
-#!/usr/bin/env sh
+#!/bin/bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+set -eu
+shopt -s nullglob
 
-set -euo pipefail
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 swift build --package-path ${DIR}/.. -c debug 
 
