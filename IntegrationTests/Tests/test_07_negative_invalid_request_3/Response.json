@@ -1,0 +1,9 @@
+{
+    "errors": {
+        "stringFieldWithValidations": [{"code": 416, "message": "Value must be at most 24 characters long"}],
+        "dateField":                  [{"code": 201, "message": "It's New Year :D"}]
+    },
+    "meta": {},
+    "result": null,
+    "success": false
+}

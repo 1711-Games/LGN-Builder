@@ -1,0 +1,22 @@
+{
+    "errors": {
+        "stringField":                [{"code": 412, "message": "Value missing"}],
+        "intField":                   [{"code": 412, "message": "Value missing"}],
+        "stringFieldWithValidations": [{"code": 412, "message": "Your input is invalid, sry"}],
+        "enumField":                  [{"code": 412, "message": "Invalid value"}],
+        "optionalEnumField":          [{"code": 412, "message": "Invalid value"}],
+        "uuidField":                  [{"code": 412, "message": "Invalid value"}],
+        "dateField":                  [{"code": 412, "message": "Invalid date format (valid format: yyyy-MM-dd kk:mm:ss.SSSSxxx)"}],
+        "password1":                  [{"code": 412, "message": "Empty password"}],
+        "password2":                  [{"code": 416, "message": "Fields must be identical"}],
+        "boolField":                  [{"code": 412, "message": "Value missing"}],
+        "customField":                [{"code": 412, "message": "Value missing"}],
+        "listField":                  [{"code": 412, "message": "Value missing"}],
+        "listCustomField":            [{"code": 412, "message": "Value missing"}],
+        "mapField":                   [{"code": 412, "message": "Value missing"}],
+        "mapCustomField":             [{"code": 412, "message": "Value missing"}]
+    },
+    "meta": {},
+    "result": null,
+    "success": false
+}

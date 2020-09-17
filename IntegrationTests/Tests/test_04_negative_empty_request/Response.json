@@ -1,0 +1,23 @@
+{
+    "errors": {
+        "stringField":                [{"code": 412, "message": "Value missing"}],
+        "intField":                   [{"code": 412, "message": "Value missing"}],
+        "stringFieldWithValidations": [{"code": 412, "message": "Value missing"}],
+        "enumField":                  [{"code": 412, "message": "Value missing"}],
+        "uuidField":                  [{"code": 412, "message": "Value missing"}],
+        "dateField":                  [{"code": 412, "message": "Value missing"}],
+        "password1":                  [{"code": 412, "message": "You must enter password"}],
+        "password2":                  [{"code": 412, "message": "Value missing"}],
+        "boolField":                  [{"code": 412, "message": "Value missing"}],
+        "customField":                [{"code": 412, "message": "Value missing"}],
+        "listField":                  [{"code": 412, "message": "Value missing"}],
+        "listCustomField":            [{"code": 412, "message": "Value missing"}],
+        "mapField":                   [{"code": 412, "message": "Value missing"}],
+        "mapCustomField":             [{"code": 412, "message": "Value missing"}],
+    },
+    "meta": {
+
+    },
+    "result": null,
+    "success": false
+}

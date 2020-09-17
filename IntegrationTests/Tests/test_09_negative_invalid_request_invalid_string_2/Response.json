@@ -1,0 +1,8 @@
+{
+    "errors": {
+        "stringFieldWithValidations": [{"code": 1337, "message": "Second callback error"}]
+    },
+    "meta": {},
+    "result": null,
+    "success": false
+}

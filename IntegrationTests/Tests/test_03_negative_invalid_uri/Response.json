@@ -1,0 +1,11 @@
+{
+    "errors": {
+        "_": [{
+            "code": 404,
+            "message": "URI 'sdfdfg' not found"
+        }]
+    },
+    "meta": {},
+    "result": null,
+    "success": false
+}

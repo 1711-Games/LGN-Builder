@@ -1,0 +1,17 @@
+{
+    "stringField": 123,
+    "intField": "not int",
+    "stringFieldWithValidations": "??????",
+    "enumField": "not a value",
+    "optionalEnumField": "whatever",
+    "uuidField": "not an enum",
+    "dateField": "not a date",
+    "password1": "",
+    "password2": "isn't equal",
+    "boolField": "not a bool",
+    "customField": "not a baz",
+    "listField": [ 1, 2, 3 ],
+    "listCustomField": ["lul", "kek"],
+    "mapField": {"lul": "lul", "kek": "kek"},
+    "mapCustomField": "not a map"
+}
