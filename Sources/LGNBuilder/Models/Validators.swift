@@ -230,9 +230,10 @@ enum Validator {
     }
 
     struct Date: AnyValidator {
-        enum Key: String { case foo }
+        enum Key: String { case format = "Format" }
 
         let message: String?
+        let format: String?
 
         init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
@@ -242,6 +243,7 @@ enum Validator {
             }
 
             self.message = try Self.getMessage(from: rawInput)
+            self.format = rawInput[Key.format] as? String
         }
     }
 

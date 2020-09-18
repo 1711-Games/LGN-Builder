@@ -1,6 +1,6 @@
 import Yams
 
-let defaultTransports: [String: Any] = [Transport.LGNS.rawValue: 1711]
+let defaultTransports: [(String, Any)] = [(Transport.LGNS.rawValue, 1711)]
 
 struct Service {
     let name: String

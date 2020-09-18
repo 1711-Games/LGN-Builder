@@ -289,9 +289,10 @@ extension Template.Swift {
                 \(succ)
                 """
         case let validator as Validator.Date:
+            let format = validator.format ?? shared.dateFormat
             result =
                 """
-                if \(ifOptional(field: field))let error = Validation.Date(\(shared.dateFormat.map { "format: \"\($0)\"" } ?? "")\(message(validator: validator, comma: shared.dateFormat != nil))).\(validate) {
+                if \(ifOptional(field: field))let error = Validation.Date(\(format.map { "format: \"\($0)\"" } ?? "")\(message(validator: validator, comma: format != nil))).\(validate) {
                     \(err)
                 }
                 \(succ)

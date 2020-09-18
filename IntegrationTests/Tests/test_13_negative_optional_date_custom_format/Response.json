@@ -1,0 +1,8 @@
+{
+    "errors": {
+        "optionalDateField": [{"code": 412, "message": "Date format is invalid, try again"}]
+    },
+    "meta": {},
+    "result": null,
+    "success": false
+}

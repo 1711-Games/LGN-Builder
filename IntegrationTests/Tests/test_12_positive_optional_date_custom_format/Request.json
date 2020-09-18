@@ -1,0 +1,17 @@
+{
+    "stringField": "string field value",
+    "intField": 1,
+    "stringFieldWithValidations": "i passed validation",
+    "enumField": "second allowed value",
+    "uuidField": "8011b1fb-74b5-4d23-b476-1f3c0e2edae8",
+    "dateField": "2020-09-13 16:37:00.1711+03:00",
+    "password1": "MoolyFTW",
+    "password2": "MoolyFTW",
+    "boolField": true,
+    "customField": {"Gerreg": false, "Tlaalt": false},
+    "listField": ["lul", "kek"],
+    "listCustomField": [{"Gerreg": true, "Tlaalt": false}, {"Gerreg": false, "Tlaalt": true}],
+    "mapField": {"lul": true, "kek": false},
+    "mapCustomField": {"1377": {"Gerreg": true, "Tlaalt": false}},
+    "optionalDateField": "2020-09-13 16:37:00"
+}

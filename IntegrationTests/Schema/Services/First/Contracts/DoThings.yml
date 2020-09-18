@@ -52,6 +52,13 @@ Request:
     listCustomField: List[Baz]
     mapField: List[String:Bool]
     mapCustomField: List[String:Baz]
+    optionalDateField:
+      Type: String
+      DefaultNull: True
+      Validators:
+        Date:
+          Format: "yyyy-MM-dd kk:mm:ss"
+          Message: "Date format is invalid, try again"
 Response:
   Fields:
     ok: List[String]
