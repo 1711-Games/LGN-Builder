@@ -44,7 +44,7 @@ extension Service: Model {
         self.info = info
 
         if rawInput[Key.transports] == nil {
-            print("Assuming default transports (\(defaultTransports)) for service")
+            print("Assuming default transports (\(defaultTransports)) for service '\(name)'")
             rawInput[Key.transports] = Dict()
         }
         guard let rawTransports = rawInput[Key.transports] as? Dict else {

@@ -56,7 +56,7 @@ extension Contract: Model {
         }
 
         if rawInput[Key.transports] == nil {
-            print("Assuming default transports (\(defaultTransports)) for contract")
+            print("Assuming default transports (\(defaultTransports)) for contract '\(name)'")
             rawInput[Key.transports] = []
         }
 

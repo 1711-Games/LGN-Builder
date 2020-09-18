@@ -115,6 +115,8 @@ extension Template.Swift {
         ) -> EventLoopFuture<\(entity.name)> {
             \(entity.fields.count > 0 ? "let eventLoop = context.eventLoop" : "")
 
+            \(Template.Swift.ensureNecessaryItems(from: entity).indented(1))
+
             \(entity
                 .fields
                 .map { field in
@@ -152,6 +154,28 @@ extension Template.Swift {
                         \(Template.Swift.initEntityFromVars(from: entity, forceUnwrap: true).indented(4))
                     )
                 }
+        }
+        """
+    }
+
+    static func ensureNecessaryItems(from entity: Entity) -> String {
+        """
+        if let error = self.ensureNecessaryItems(
+            in: dictionary,
+            necessaryItems: [
+                \(entity
+                    .fields
+                    .map {
+                        """
+                        "\($0.name)",
+                        """
+                    }
+                    .joined(separator: "\n")
+                    .indented(2)
+                )
+            ]
+        ) {
+            return eventLoop.makeFailedFuture(error)
         }
         """
     }
