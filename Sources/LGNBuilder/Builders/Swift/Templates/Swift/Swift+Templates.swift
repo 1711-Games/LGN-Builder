@@ -102,7 +102,7 @@ extension Template.Swift {
         """
     }
 
-    static func servicesList(from services: [String: Service]) -> String {
+    static func servicesList(from services: [(String, Service)]) -> String {
         """
         public static let list: [String: Service.Type] = [
             \(services

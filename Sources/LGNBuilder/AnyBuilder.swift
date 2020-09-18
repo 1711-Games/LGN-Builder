@@ -20,7 +20,7 @@ extension E: CustomStringConvertible {
 }
 
 protocol AnyBuilder {
-    typealias Schema = (shared: Shared, services: [String: Service])
+    typealias Schema = (shared: Shared, services: [(String, Service)])
 
     var compiledSchemaFilename: String { get }
     var inputDirectory: URL { get }
@@ -173,13 +173,11 @@ extension AnyBuilder {
 
         return (
             shared: shared,
-            services: try .init(
-                uniqueKeysWithValues: rawServices
-                    .filter { serviceName, _ in servicesNames.contains(serviceName) }
-                    .map { serviceName, rawService in
-                        (serviceName, try Service(name: serviceName, from: rawService, shared: shared))
-                    }
-            )
+            services: try rawServices
+                .filter { serviceName, _ in servicesNames.contains(serviceName) }
+                .map { serviceName, rawService in
+                    (serviceName, try Service(name: serviceName, from: rawService, shared: shared))
+                }
         )
     }
 
@@ -195,10 +193,12 @@ extension AnyBuilder {
         }
         print("Successfully written core to \(fileCore.absoluteString)")
 
-        for serviceName in self.services.isEmpty ? Array(schema.services.keys)/*.sorted()*/ : self.services {
-            guard let service = schema.services[serviceName] else {
+        let fullServicesList: [String] = schema.services.map { name, _ in name }
+        let desiredServicesList = self.services.isEmpty ? fullServicesList : self.services
+        for serviceName in desiredServicesList {
+            guard let service = schema.services.first(where: { $0.0 == serviceName })?.1 else {
                 throw E.InvalidSchema(
-                    "Requested service '\(serviceName)' not present in schema (\(schema.services.keys)"
+                    "Requested service '\(serviceName)' not present in schema (\(fullServicesList))"
                 )
             }
             let generatedService = try self.generate(service: service, shared: schema.shared)

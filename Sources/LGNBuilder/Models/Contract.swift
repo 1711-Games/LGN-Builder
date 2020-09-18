@@ -1,3 +1,5 @@
+typealias Contracts = [(String, Contract)]
+
 struct Contract {
     let name: String
     let URI: String?

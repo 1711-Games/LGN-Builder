@@ -1,5 +1,5 @@
 extension Template.Swift {
-    static func contracts(from contracts: [String: Contract], service: Service, shared: Shared) -> String {
+    static func contracts(from contracts: Contracts, service: Service, shared: Shared) -> String {
         contracts
             //.sorted
             .map { Template.Swift.contract(from: $1, service: service, shared: shared) }

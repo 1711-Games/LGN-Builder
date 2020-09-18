@@ -44,7 +44,7 @@ extension Template.Swift {
         """
     }
 
-    static func transports(from transports: [Transport: Int]) -> String {
+    static func transports(from transports: [(Transport, Int)]) -> String {
         """
         public static let transports: [LGNCore.Transport: Int] = [
             \(transports.count == 0
@@ -58,7 +58,7 @@ extension Template.Swift {
         """
     }
 
-    static func info(from info: [String: String]) -> String {
+    static func info(from info: [(String, String)]) -> String {
         var result = "public static let info: [String: String] = "
 
         if info.isEmpty {
@@ -78,7 +78,7 @@ extension Template.Swift {
         return result
     }
 
-    static func guaranteeStatuses(from contracts: [String: Contract]) -> String {
+    static func guaranteeStatuses(from contracts: Contracts) -> String {
         """
         public static var guaranteeStatuses: [String: Bool] = [
             \(
@@ -94,7 +94,7 @@ extension Template.Swift {
         """
     }
 
-    static func contractMap(from contracts: [String: Contract]) -> String {
+    static func contractMap(from contracts: Contracts) -> String {
         """
         public static let contractMap: [String: AnyContract.Type] = [
             \(
@@ -110,7 +110,7 @@ extension Template.Swift {
         """
     }
 
-    static func callbackSetters(from contracts: [String: Contract]) -> String {
+    static func callbackSetters(from contracts: Contracts) -> String {
         contracts
             //.sorted
             .compactMap { name, contract in
@@ -138,7 +138,7 @@ extension Template.Swift {
             .joined(separator: "\n\n")
     }
 
-    static func contractClientExecutors(from contracts: [String: Contract]) -> String {
+    static func contractClientExecutors(from contracts: Contracts) -> String {
         contracts
             //.sorted
             .compactMap { name, contract in
@@ -158,7 +158,7 @@ extension Template.Swift {
             .joined(separator: "\n\n")
     }
 
-    static func contractsFieldsValidators(from contracts: [String: Contract], shared: Shared) -> String {
+    static func contractsFieldsValidators(from contracts: Contracts, shared: Shared) -> String {
         contracts
             .compactMap { contractName, contract in
                 if !contract.generateServiceWiseValidators {
@@ -200,7 +200,7 @@ extension Template.Swift {
             .joined(separator: "\n")
     }
 
-    static func cumulativeKeyDictionary(from contracts: [String: Contract]) -> String {
+    static func cumulativeKeyDictionary(from contracts: Contracts) -> String {
         """
         public static let keyDictionary: [String: Entita.Dict] = [
             \(contracts
