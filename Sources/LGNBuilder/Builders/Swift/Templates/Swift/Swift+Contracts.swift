@@ -41,7 +41,7 @@ extension Template.Swift {
             return ""
         }
 
-        return "public typealias \(name) = \(entityType.isSharedEmpty ? "LGNC.Entity" : "Services.Shared").\(entity.name)"
+        return "public typealias \(name) = \(entity.preparedName)"
     }
 
     static func entityTypealiases(from contract: Contract) -> String {

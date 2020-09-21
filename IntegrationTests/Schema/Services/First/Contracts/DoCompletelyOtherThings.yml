@@ -1,0 +1,11 @@
+Request:
+  Fields:
+    stringField: String
+    cookie: Cookie
+    optionalCookie:
+      Type: Cookie
+      DefaultNull: True
+Response:
+  Fields:
+    pronto: List[String]
+    responseCookie: Cookie

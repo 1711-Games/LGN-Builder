@@ -1,0 +1,22 @@
+{
+    "errors": {},
+    "meta": {},
+    "result": {
+        "pronto": [
+            "stringField   : string field value",
+            "cookie        : 38afes7a8",
+            "optionalCookie: sdfdfg"
+        ],
+        "responseCookie": {
+            "name"    : "got key cookie",
+            "value"   : "got value 38afes7a8",
+            "domain"  : null,
+            "expires" : "",
+            "httpOnly": false,
+            "maxAge"  : null,
+            "path"    : "\/",
+            "secure"  : false
+        }
+    },
+    "success": true
+}

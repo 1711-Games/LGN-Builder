@@ -25,8 +25,10 @@ final class Shared {
     }
 
     func getEntity(byName name: String) -> Entity? {
-        name == Entity.emptyEntityName
-            ? .empty
-            : self.entities.first(where: { $0.name == name })
+        if let systemEntity = EntityType.System(rawValue: name)?.entity {
+            return systemEntity
+        }
+
+        return self.entities.first(where: { $0.name == name })
     }
 }

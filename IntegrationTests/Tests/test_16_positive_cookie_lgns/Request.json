@@ -1,0 +1,17 @@
+{
+    "stringField": "string field value",
+    "cookie": {
+        "name": "cookie",
+        "value": "38afes7a8",
+        "httpOnly": true,
+        "path": "/",
+        "secure": false,
+    },
+    "optionalCookie": {
+        "name": "cookie",
+        "value": "sdfdfg",
+        "httpOnly": true,
+        "path": "/",
+        "secure": false,
+    }
+}

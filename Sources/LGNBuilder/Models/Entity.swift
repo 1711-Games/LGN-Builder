@@ -1,17 +1,3 @@
-enum EntityType {
-    case entity(Entity)
-    case shared(Entity)
-}
-
-extension EntityType {
-    var isSharedEmpty: Bool {
-        if case .shared(let entity) = self {
-            return entity.isSystem && entity.name == Entity.emptyEntityName
-        }
-        return false
-    }
-}
-
 struct Entity {
     let name: String
     let fields: [Field]
@@ -27,7 +13,7 @@ struct Entity {
         needsAwait: Bool,
         futureField: String?,
         isMutable: Bool,
-        keyDictionary: [String : String],
+        keyDictionary: [String: String],
         isSystem: Bool = false
     ) {
         self.name = name
@@ -46,6 +32,10 @@ extension Entity: Model {
         case excludedFields = "ExcludeFields"
         case fields = "Fields"
         case isMutable = "IsMutable"
+    }
+
+    var preparedName: String {
+        "\(self.isSystem ? "LGNC.Entity" : "Services.Shared").\(self.name)"
     }
 
     @available(*, deprecated, message: "Use init(name:from:shared:) instead")
@@ -75,7 +65,7 @@ extension Entity: Model {
         // entity might have parent entity + excluded fields, and thus there migth be no need to have `Fields` key.
         let rawFields = rawInput[Key.fields] as? Dict ?? Dict()
         for (fieldName, fieldParams) in rawFields {
-            let field = try Field(name: fieldName, from: fieldParams)
+            let field = try Field(name: fieldName, from: fieldParams, shared: shared)
             if let existingFieldIndex = fields.firstIndex(where: { $0.name == field.name }) {
                 fields[existingFieldIndex] = field
             } else {
@@ -100,10 +90,18 @@ extension Entity: Model {
 }
 
 extension Entity {
-    static let emptyEntityName = "Empty"
-
     static let empty: Self = Self(
-        name: Self.emptyEntityName,
+        name: EntityType.System.Empty.rawValue,
+        fields: [],
+        needsAwait: false,
+        futureField: nil,
+        isMutable: false,
+        keyDictionary: [:],
+        isSystem: true
+    )
+
+    static let cookie: Self = Self(
+        name: EntityType.System.Cookie.rawValue,
         fields: [],
         needsAwait: false,
         futureField: nil,
