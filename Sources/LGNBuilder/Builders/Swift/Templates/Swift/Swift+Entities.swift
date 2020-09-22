@@ -13,6 +13,7 @@ extension Template.Swift {
         \(isPublic ? "public " : "")final class \(entity.name): ContractEntity {
             \(blocks([
                 Template.Swift.entityKeyDictionary(from: entity),
+                Template.Swift.hasCookiedFields(from: entity),
                 Template.Swift.validationCallbackVars(from: entity),
                 Template.Swift.enums(from: entity),
                 Template.Swift.classFields(from: entity),
@@ -121,8 +122,23 @@ extension Template.Swift {
                 .fields
                 .map { field in
                     let declaration = "let \(field.name): \(Template.Swift.prepareType(field: field))?\(field.isNullable ? "?" : "")"
-                    let assign = "try? (self.extract(param: \"\(field.name)\", from: dictionary\(field.isNullable ? ", isOptional: true" : "")) as \(Template.Swift.prepareType(field: field))\(field.isNullable ? "?" : ""))"
-                    return "\(declaration) = \(assign)"
+                    let result: String
+
+                    if field.type.isCookie {
+                        result = """
+                        \(declaration)
+                        do {
+                            \(field.name) = try self.extractCookie(param: \"\(field.name)\", from: dictionary, context: context)
+                        } catch {
+                            return eventLoop.makeFailedFuture(error)
+                        }
+                        """
+                    } else {
+                        let assign = "try? (self.extract(param: \"\(field.name)\", from: dictionary\(field.isNullable ? ", isOptional: true" : "")) as \(Template.Swift.prepareType(field: field))\(field.isNullable ? "?" : ""))"
+                        result = "\(declaration) = \(assign)"
+                    }
+
+                    return result
                 }
                 .joined(separator: "\n")
                 .indented(1)
@@ -465,6 +481,16 @@ extension Template.Swift {
                 ? ":"
                 : "\n" + entity.keyDictionary.map { "\"\($0)\": \"\($1)\"" }.joined(separator: ",\n").indented(1) + "\n"
         )]
+        """
+    }
+
+    static func hasCookiedFields(from entity: Entity) -> String {
+        guard !entity.fields.filter(\.type.isCookie).isEmpty else {
+            return ""
+        }
+
+        return """
+        public static let hasCookieFields: Bool = true
         """
     }
 

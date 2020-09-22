@@ -81,10 +81,10 @@ extension Contract: Model {
         self.isPublic = rawInput[Key.isPublic] as? Bool ?? false
 
         if rawInput[Key.request] == nil {
-            rawInput[Key.request] = Entity.emptyEntityName
+            rawInput[Key.request] = EntityType.System.Empty.rawValue
         }
         if rawInput[Key.response] == nil {
-            rawInput[Key.response] = Entity.emptyEntityName
+            rawInput[Key.response] = EntityType.System.Empty.rawValue
         }
 
         let request: EntityType
@@ -130,5 +130,28 @@ extension Contract: Model {
             ))
         }
         self.response = response
+
+        if self.transports.contains(.LGNS) {
+            [self.request, self.response].forEach { entityType in
+//                let entity: Entity
+//
+//                switch entityType {
+//                case let .entity(_entity), let .shared(_entity): entity = _entity
+//                }
+//
+//                let cookieFields = entity.fields.filter(\.type.isCookie)
+//                if !cookieFields.isEmpty {
+//                    print(
+//                        """
+//                        Warning: entity '\(entity.name)' in LGNS contract '\(self.name)' \
+//                        has field\(cookieFields.count > 1 ? "s": "") \
+//                        \(cookieFields.map { "'\($0.name)'" }.joined(separator: ", ")) of type 'Cookie', \
+//                        which isn't recommended because cookies is a HTTP concept. Still, your contract \
+//                        isn't invalid, but you should consider reorganising your contract/entity.
+//                        """
+//                    )
+//                }
+            }
+        }
     }
 }

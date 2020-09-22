@@ -1,13 +1,3 @@
-indirect enum FieldType {
-    case String
-    case Int
-    case Float
-    case Bool
-    case List(FieldType)
-    case Map(String, FieldType)
-    case Custom(String)
-}
-
 struct Field {
     let name: String
     let type: FieldType
@@ -51,69 +41,6 @@ struct Field {
     }
 }
 
-extension FieldType {
-    var asString: String {
-        let result: String
-
-        switch self {
-        case .String: result = "String"
-        case .Int: result = "Int"
-        case .Bool: result = "Bool"
-        case .Float: result = "Float"
-        case let .List(list): result = "List[\(list.asString)]"
-        case let .Map(key, value): result = "Map[\(key):\(value.asString)]"
-        case let .Custom(name): result = name
-        }
-
-        return result
-    }
-
-    var isString: Bool {
-        if case .String = self {
-            return true
-        }
-        return false
-    }
-
-    var canBeDictionaryKey: Bool {
-        let result: Bool
-
-        switch self {
-        case .String: result = true
-        case .Int: result = true
-        default: result = false
-        }
-
-        return result
-    }
-
-    init(from string: String) throws {
-        let result: Self
-
-        let listPrefix = "List["
-        let mapPrefix = "Map["
-
-        switch string {
-        case "String": result = .String
-        case "Int": result = .Int
-        case "Bool": result = .Bool
-        case "Float": result = .Float
-        case let str where str.starts(with: listPrefix):
-            result = try .List(Self.init(from: Swift.String(string.dropFirst(listPrefix.count).dropLast(1))))
-        case let str where str.starts(with: "Map["):
-            let cleanString = string.dropFirst(mapPrefix.count).dropLast(1)
-            let components = cleanString.split(separator: ":")
-            guard components.count == 2 else {
-                throw E.InvalidSchema("Map type definition must contain colon (input: '\(string)')")
-            }
-            result = try .Map(Swift.String(components[0]), Self.init(from: Swift.String(components[1])))
-        default: result = .Custom(string)
-        }
-
-        self = result
-    }
-}
-
 extension Field: Model {
     enum Key: String {
         case type = "Type"
@@ -131,16 +58,16 @@ extension Field: Model {
 
     @available(*, deprecated, renamed: "init(name:from:)")
     init(from input: Any) throws {
-        throw E.InvalidSchema("Use init(name:from:) instead")
+        throw E.InvalidSchema("Use init(name:from:shared:) instead")
     }
 
-    init(name: String, from input: Any) throws {
+    init(name: String, from input: Any, shared: Shared) throws {
         let errorPrefix = "Could not decode field '\(name)'"
 
         if let type = input as? String {
             self = Self.init(
                 name: name,
-                type: try .init(from: type),
+                type: try .init(from: type, shared: shared),
                 validators: [],
                 canBeFuture: false,
                 isMutable: false,
@@ -159,7 +86,7 @@ extension Field: Model {
         guard let rawType = rawInput[Key.type] as? String else {
             throw E.InvalidSchema("\(errorPrefix): missing key '\(Key.type.rawValue)' (input: \(input))")
         }
-        let type = try FieldType(from: rawType)
+        let type = try FieldType(from: rawType, shared: shared)
         // Only `String`s can have `NotEmpty` validator
         if !type.isString && (rawInput[Key.isNotEmpty] as? Bool) == true {
             rawInput["NotEmpty"] = false
