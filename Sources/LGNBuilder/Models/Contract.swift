@@ -95,8 +95,9 @@ extension Contract: Model {
                 throw E.InvalidSchema("\(errorPrefix): unknown transport '\(rawTransport)'")
             }
             if !allowedTransports.contains(transport) {
-                print("Ignoring transport '\(transport)' as it's not in allowed transports list (\(allowedTransports))")
-                return nil
+                throw E.InvalidSchema(
+                    "\(errorPrefix): transport '\(transport)' is not in allowed transports list (\(allowedTransports))"
+                )
             }
             return transport
         }
@@ -108,72 +109,20 @@ extension Contract: Model {
             rawInput[Key.response] = EntityType.System.Empty.rawValue
         }
 
-        let request: EntityType
-        guard rawInput[Key.request] != nil else {
-            throw E.InvalidSchema(
-                "\(errorPrefix): missing or invalid key '\(Key.request.rawValue)' '(input: \(rawInput)')"
-            )
-        }
-        if let rawRequest = rawInput[Key.request] as? String {
-            guard let sharedRequestEntity = shared.getEntity(byName: rawRequest) else {
-                throw E.InvalidSchema(
-                    "\(errorPrefix): could not find request entity '\(rawRequest)' in shared '(input: \(rawInput)')"
-                )
-            }
-            request = .shared(sharedRequestEntity)
-        } else {
-            request = try .init(Entity(
-                name: "Request",
-                from: rawInput[Key.request] as Any,
-                shared: shared
-            ))
-        }
-
-        let response: EntityType
-        guard rawInput[Key.response] != nil else {
-            throw E.InvalidSchema(
-                "\(errorPrefix): missing or invalid key '\(Key.response.rawValue)' '(input: \(rawInput)')"
-            )
-        }
-        if let rawResponse = rawInput[Key.response] as? String {
-            guard let sharedResponseEntity = shared.getEntity(byName: rawResponse) else {
-                throw E.InvalidSchema(
-                    "\(errorPrefix): could not find response entity '\(rawResponse)' in shared '(input: \(rawInput)')"
-                )
-            }
-            response = .shared(sharedResponseEntity)
-        } else {
-            response = try .init(Entity(
-                name: "Response",
-                from: rawInput[Key.response] as Any,
-                shared: shared
-            ))
-        }
+        let request: EntityType = try Self.initEntity(
+            from: rawInput,
+            as: .request,
+            shared: shared,
+            errorPrefix: errorPrefix
+        )
+        let response: EntityType = try Self.initEntity(
+            from: rawInput,
+            as: .response,
+            shared: shared,
+            errorPrefix: errorPrefix
+        )
 
         let isGETSafe = rawInput[Key.isGETSafe] as? Bool ?? false
-        if transports.contains(.LGNS) {
-            [request, response].forEach { entityType in
-//                let entity: Entity
-//
-//                switch entityType {
-//                case let .entity(_entity), let .shared(_entity): entity = _entity
-//                }
-//
-//                let cookieFields = entity.fields.filter(\.type.isCookie)
-//                if !cookieFields.isEmpty {
-//                    print(
-//                        """
-//                        Warning: entity '\(entity.name)' in LGNS contract '\(self.name)' \
-//                        has field\(cookieFields.count > 1 ? "s": "") \
-//                        \(cookieFields.map { "'\($0.name)'" }.joined(separator: ", ")) of type 'Cookie', \
-//                        which isn't recommended because cookies is a HTTP concept. Still, your contract \
-//                        isn't invalid, but you should consider reorganising your contract/entity.
-//                        """
-//                    )
-//                }
-            }
-        }
-
         if isGETSafe {
             if !transports.contains(.HTTP) {
                 throw E.InvalidSchema(
@@ -210,5 +159,36 @@ extension Contract: Model {
             isPublic: rawInput[Key.isPublic] as? Bool ?? false,
             isGETSafe: isGETSafe
         )
+    }
+
+    fileprivate static func initEntity(
+        from input: Dict,
+        as key: Key,
+        shared: Shared,
+        errorPrefix: String
+    ) throws -> EntityType {
+        let result: EntityType
+
+        guard input[key] != nil else {
+            throw E.InvalidSchema(
+                "\(errorPrefix): missing or invalid key '\(key.rawValue)' '(input: \(input)')"
+            )
+        }
+        if let rawResult = input[key] as? String {
+            guard let sharedEntity = shared.getEntity(byName: rawResult) else {
+                throw E.InvalidSchema(
+                    "\(errorPrefix): could not find \(key.rawValue) entity '\(rawResult)' in shared '(input: \(input)')"
+                )
+            }
+            result = .shared(sharedEntity)
+        } else {
+            result = try .init(Entity(
+                name: key.rawValue,
+                from: input[key] as Any,
+                shared: shared
+            ))
+        }
+
+        return result
     }
 }
