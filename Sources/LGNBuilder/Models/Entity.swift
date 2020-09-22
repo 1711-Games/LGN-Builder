@@ -1,25 +1,27 @@
 struct Entity {
     let name: String
     let fields: [Field]
-    let needsAwait: Bool
-    let futureField: String?
     let isMutable: Bool
     let keyDictionary: [String: String]
     let isSystem: Bool
 
+    var needsAwait: Bool {
+        self.fields.reduce(false, { $0 || $1.canBeFuture })
+    }
+
+    var futureField: Field? {
+        self.fields.first(where: { $0.canBeFuture })
+    }
+
     init(
         name: String,
         fields: [Field],
-        needsAwait: Bool,
-        futureField: String?,
         isMutable: Bool,
         keyDictionary: [String: String],
         isSystem: Bool = false
     ) {
         self.name = name
         self.fields = fields
-        self.needsAwait = needsAwait
-        self.futureField = futureField
         self.isMutable = isMutable
         self.keyDictionary = keyDictionary
         self.isSystem = isSystem
@@ -80,8 +82,6 @@ extension Entity: Model {
         self = Self(
             name: name,
             fields: fields,
-            needsAwait: fields.reduce(false, { $0 || $1.canBeFuture }),
-            futureField: fields.first(where: { $0.canBeFuture })?.name,
             isMutable: rawInput[Key.isMutable] as? Bool ?? false,
             keyDictionary: [:], // todo
             isSystem: false
@@ -93,8 +93,6 @@ extension Entity {
     static let empty: Self = Self(
         name: EntityType.System.Empty.rawValue,
         fields: [],
-        needsAwait: false,
-        futureField: nil,
         isMutable: false,
         keyDictionary: [:],
         isSystem: true
@@ -103,8 +101,6 @@ extension Entity {
     static let cookie: Self = Self(
         name: EntityType.System.Cookie.rawValue,
         fields: [],
-        needsAwait: false,
-        futureField: nil,
         isMutable: false,
         keyDictionary: [:],
         isSystem: true

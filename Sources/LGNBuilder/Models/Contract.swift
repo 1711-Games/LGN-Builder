@@ -11,6 +11,33 @@ struct Contract {
     let request: EntityType
     let response: EntityType
     let isPublic: Bool
+    let isGETSafe: Bool
+
+    init(
+        name: String,
+        URI: String?,
+        contentTypes: [ContentType]?,
+        transports: [Transport],
+        generateServiceWiseExecutors: Bool,
+        generateServiceWiseGuarantee: Bool,
+        generateServiceWiseValidators: Bool,
+        request: EntityType,
+        response: EntityType,
+        isPublic: Bool,
+        isGETSafe: Bool
+    ) {
+        self.name = name
+        self.URI = URI
+        self.contentTypes = contentTypes
+        self.transports = transports
+        self.generateServiceWiseExecutors = generateServiceWiseExecutors
+        self.generateServiceWiseGuarantee = generateServiceWiseGuarantee
+        self.generateServiceWiseValidators = generateServiceWiseValidators
+        self.request = request
+        self.response = response
+        self.isPublic = isPublic
+        self.isGETSafe = isGETSafe
+    }
 
     mutating func excludeTransports(_ allowedTransports: [Transport: Int]) -> Self {
         return self
@@ -28,6 +55,7 @@ extension Contract: Model {
         case request = "Request"
         case response = "Response"
         case isPublic = "IsPublic"
+        case isGETSafe = "IsGETSafe"
     }
 
     @available(*, deprecated, message: "Use init(name:from:allowedTransports:)")
@@ -36,25 +64,22 @@ extension Contract: Model {
     }
 
     init(name: String, from input: Any, allowedTransports: [Transport], shared: Shared) throws {
-        self.name = name
-
         let errorPrefix = "Could not decode contract '\(name)'"
 
         guard var rawInput = input as? Dict else {
             throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
         }
 
-        self.URI = rawInput[Key.URI] as? String
-
+        let contentTypes: [ContentType]?
         if let rawContentTypes = rawInput[Key.contentTypes] as? [String] {
-            self.contentTypes = try rawContentTypes.map {
+            contentTypes = try rawContentTypes.map {
                 guard let contentType = ContentType(rawValue: $0) else {
                     throw E.InvalidSchema("\(errorPrefix): could not decode content type from '\($0)'")
                 }
                 return contentType
             }
         } else {
-            self.contentTypes = nil
+            contentTypes = nil
         }
 
         if rawInput[Key.transports] == nil {
@@ -65,7 +90,7 @@ extension Contract: Model {
         guard let rawTransports = rawInput[Key.transports] as? [Any] else {
             throw E.InvalidSchema("\(errorPrefix): input does not contain '\(Key.transports.rawValue)' key or invalid")
         }
-        self.transports = try rawTransports.compactMap { rawTransport in
+        let transports: [Transport] = try rawTransports.compactMap { rawTransport in
             guard let rawValue = rawTransport as? String, let transport = Transport(rawValue: rawValue) else {
                 throw E.InvalidSchema("\(errorPrefix): unknown transport '\(rawTransport)'")
             }
@@ -75,10 +100,6 @@ extension Contract: Model {
             }
             return transport
         }
-        self.generateServiceWiseExecutors = rawInput[Key.generateServiceWiseExecutors] as? Bool ?? false
-        self.generateServiceWiseGuarantee = rawInput[Key.generateServiceWiseGuarantee] as? Bool ?? false
-        self.generateServiceWiseValidators = rawInput[Key.generateServiceWiseValidators] as? Bool ?? false
-        self.isPublic = rawInput[Key.isPublic] as? Bool ?? false
 
         if rawInput[Key.request] == nil {
             rawInput[Key.request] = EntityType.System.Empty.rawValue
@@ -101,13 +122,12 @@ extension Contract: Model {
             }
             request = .shared(sharedRequestEntity)
         } else {
-            request = try .entity(Entity(
+            request = try .init(Entity(
                 name: "Request",
                 from: rawInput[Key.request] as Any,
                 shared: shared
             ))
         }
-        self.request = request
 
         let response: EntityType
         guard rawInput[Key.response] != nil else {
@@ -123,16 +143,16 @@ extension Contract: Model {
             }
             response = .shared(sharedResponseEntity)
         } else {
-            response = try .entity(Entity(
+            response = try .init(Entity(
                 name: "Response",
                 from: rawInput[Key.response] as Any,
                 shared: shared
             ))
         }
-        self.response = response
 
-        if self.transports.contains(.LGNS) {
-            [self.request, self.response].forEach { entityType in
+        let isGETSafe = rawInput[Key.isGETSafe] as? Bool ?? false
+        if transports.contains(.LGNS) {
+            [request, response].forEach { entityType in
 //                let entity: Entity
 //
 //                switch entityType {
@@ -153,5 +173,42 @@ extension Contract: Model {
 //                }
             }
         }
+
+        if isGETSafe {
+            if !transports.contains(.HTTP) {
+                throw E.InvalidSchema(
+                    """
+                    \(errorPrefix): IsGETSafe is set to 'true', but contract doesn't have HTTP transport
+                    """
+                )
+            }
+
+            let nonGETSafeFields = request.wrapped.fields.filter { !$0.type.isGETSafe }
+            if nonGETSafeFields.count > 0 {
+                throw E.InvalidSchema(
+                    """
+                    \(errorPrefix): IsGETSafe is set to 'true', but contract has non-GET-safe fields: \
+                    \(nonGETSafeFields
+                        .map { "'\($0.name)' (of type '\($0.type.asString)')" }
+                        .joined(separator: ", ")
+                    )
+                    """
+                )
+            }
+        }
+
+        self.init(
+            name: name,
+            URI: rawInput[Key.URI] as? String,
+            contentTypes: contentTypes,
+            transports: transports,
+            generateServiceWiseExecutors: rawInput[Key.generateServiceWiseExecutors] as? Bool ?? false,
+            generateServiceWiseGuarantee: rawInput[Key.generateServiceWiseGuarantee] as? Bool ?? false,
+            generateServiceWiseValidators: rawInput[Key.generateServiceWiseValidators] as? Bool ?? false,
+            request: request,
+            response: response,
+            isPublic: rawInput[Key.isPublic] as? Bool ?? false,
+            isGETSafe: isGETSafe
+        )
     }
 }

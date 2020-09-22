@@ -16,10 +16,11 @@ extension Template.Swift {
                 "public static let transports: [LGNCore.Transport] = [\(contract.transports.map { "." + $0.rawValue }.joined(separator: ", "))]",
                 "public static var guaranteeClosure: Optional<Closure> = nil",
                 "public static let contentTypes: [LGNCore.ContentType] = \(Template.Swift.contentTypes(from: contract.contentTypes).indented(1))",
+                contract.isGETSafe ? "public static let isGETSafe = true" : "",
                 "",
                 "static let visibility: ContractVisibility = \(contract.isPublic ? ".Public" : ".Private")",
                 Template.Swift.contractEntities(from: contract, shared: shared),
-            ], indent: 1, separator: "\n"))
+            ], indent: 1, separator: "\n").removingDoubleNewlines())
         }
         """
     }
@@ -37,11 +38,11 @@ extension Template.Swift {
     }
 
     static func entityTypealias(from entityType: EntityType, name: String) -> String {
-        guard case .shared(let entity) = entityType else {
+        guard entityType.isShared else {
             return ""
         }
 
-        return "public typealias \(name) = \(entity.preparedName)"
+        return "public typealias \(name) = \(entityType.wrapped.preparedName)"
     }
 
     static func entityTypealiases(from contract: Contract) -> String {
@@ -61,12 +62,7 @@ extension Template.Swift {
 
     static func contractEntities(from contract: Contract, shared: Shared) -> String {
         var result = [contract.request, contract.response]
-            .compactMap {
-                guard case .entity(let entity) = $0 else {
-                    return nil
-                }
-                return entity
-            }
+            .compactMap { $0.isShared ? nil : $0.wrapped }
             .map { Template.Swift.entity(from: $0, shared: shared, isPublic: true) }
             .joined(separator: "\n\n")
 

@@ -166,14 +166,7 @@ extension Template.Swift {
                 }
                 var result = [String]()
                 for (entityName, entityType) in ["Request": contract.request, "Response": contract.response] {
-                    let entity: Entity
-
-                    switch entityType {
-                    case let .entity(_entity): entity = _entity
-                    case let .shared(_entity): entity = _entity
-                    }
-
-                    for (name, (type, errors)) in entity.validationCallbacks {
+                    for (name, (type, errors)) in entityType.wrapped.validationCallbacks {
                         let prefix = "Contracts." + contractName + "." + entityName + "."
                         result.append(
                             """
