@@ -5,9 +5,9 @@ struct Contract {
     let URI: String?
     let contentTypes: [ContentType]?
     var transports: [Transport]
-    let generateServiceWiseExecutors: Bool
-    let generateServiceWiseGuarantee: Bool
-    let generateServiceWiseValidators: Bool
+    let generateServicewiseExecutors: Bool
+    let generateServicewiseGuarantee: Bool
+    let generateServicewiseValidators: Bool
     let request: EntityType
     let response: EntityType
     let isPublic: Bool
@@ -18,9 +18,9 @@ struct Contract {
         URI: String?,
         contentTypes: [ContentType]?,
         transports: [Transport],
-        generateServiceWiseExecutors: Bool,
-        generateServiceWiseGuarantee: Bool,
-        generateServiceWiseValidators: Bool,
+        generateServicewiseExecutors: Bool,
+        generateServicewiseGuarantee: Bool,
+        generateServicewiseValidators: Bool,
         request: EntityType,
         response: EntityType,
         isPublic: Bool,
@@ -30,9 +30,9 @@ struct Contract {
         self.URI = URI
         self.contentTypes = contentTypes
         self.transports = transports
-        self.generateServiceWiseExecutors = generateServiceWiseExecutors
-        self.generateServiceWiseGuarantee = generateServiceWiseGuarantee
-        self.generateServiceWiseValidators = generateServiceWiseValidators
+        self.generateServicewiseExecutors = generateServicewiseExecutors
+        self.generateServicewiseGuarantee = generateServicewiseGuarantee
+        self.generateServicewiseValidators = generateServicewiseValidators
         self.request = request
         self.response = response
         self.isPublic = isPublic
@@ -49,9 +49,9 @@ extension Contract: Model {
         case transports = "Transports"
         case URI = "URI"
         case contentTypes = "ContentTypes"
-        case generateServiceWiseExecutors = "GenerateServiceWiseExecutors"
-        case generateServiceWiseGuarantee = "GenerateServiceWiseGuarantee"
-        case generateServiceWiseValidators = "GenerateServiceWiseValidators"
+        case generateServicewiseExecutors = "GenerateServicewiseExecutors"
+        case generateServicewiseGuarantee = "GenerateServicewiseGuarantee"
+        case generateServicewiseValidators = "GenerateServicewiseValidators"
         case request = "Request"
         case response = "Response"
         case isPublic = "IsPublic"
@@ -202,9 +202,9 @@ extension Contract: Model {
             URI: rawInput[Key.URI] as? String,
             contentTypes: contentTypes,
             transports: transports,
-            generateServiceWiseExecutors: rawInput[Key.generateServiceWiseExecutors] as? Bool ?? false,
-            generateServiceWiseGuarantee: rawInput[Key.generateServiceWiseGuarantee] as? Bool ?? false,
-            generateServiceWiseValidators: rawInput[Key.generateServiceWiseValidators] as? Bool ?? false,
+            generateServicewiseExecutors: rawInput[Key.generateServicewiseExecutors] as? Bool ?? false,
+            generateServicewiseGuarantee: rawInput[Key.generateServicewiseGuarantee] as? Bool ?? false,
+            generateServicewiseValidators: rawInput[Key.generateServicewiseValidators] as? Bool ?? false,
             request: request,
             response: response,
             isPublic: rawInput[Key.isPublic] as? Bool ?? false,
