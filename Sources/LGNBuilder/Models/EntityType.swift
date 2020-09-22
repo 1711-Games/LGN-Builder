@@ -1,9 +1,4 @@
-enum EntityType {
-    case entity(Entity)
-    case shared(Entity)
-}
-
-extension EntityType {
+struct EntityType {
     enum System: String {
         case Empty
         case Cookie
@@ -20,10 +15,19 @@ extension EntityType {
         }
     }
 
+    var wrapped: Entity
+    var isShared: Bool = false
+
     var isSystem: Bool {
-        if case .shared(let entity) = self {
-            return entity.isSystem
-        }
-        return false
+        self.isShared && self.wrapped.isSystem
+    }
+
+    static func shared(_ entity: Entity) -> Self {
+        Self(entity, isShared: true)
+    }
+
+    init(_ wrapped: Entity, isShared: Bool = false) {
+        self.wrapped = wrapped
+        self.isShared = isShared
     }
 }

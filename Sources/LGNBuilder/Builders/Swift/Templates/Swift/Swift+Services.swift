@@ -114,7 +114,7 @@ extension Template.Swift {
         contracts
             //.sorted
             .compactMap { name, contract in
-                if !contract.generateServiceWiseGuarantee {
+                if !contract.generateServicewiseGuarantee {
                     return nil
                 }
                 return """
@@ -142,7 +142,7 @@ extension Template.Swift {
         contracts
             //.sorted
             .compactMap { name, contract in
-                if !contract.generateServiceWiseExecutors {
+                if !contract.generateServicewiseExecutors {
                     return nil
                 }
                 return """
@@ -161,19 +161,12 @@ extension Template.Swift {
     static func contractsFieldsValidators(from contracts: Contracts, shared: Shared) -> String {
         contracts
             .compactMap { contractName, contract in
-                if !contract.generateServiceWiseValidators {
+                if !contract.generateServicewiseValidators {
                     return nil
                 }
                 var result = [String]()
                 for (entityName, entityType) in ["Request": contract.request, "Response": contract.response] {
-                    let entity: Entity
-
-                    switch entityType {
-                    case let .entity(_entity): entity = _entity
-                    case let .shared(_entity): entity = _entity
-                    }
-
-                    for (name, (type, errors)) in entity.validationCallbacks {
+                    for (name, (type, errors)) in entityType.wrapped.validationCallbacks {
                         let prefix = "Contracts." + contractName + "." + entityName + "."
                         result.append(
                             """

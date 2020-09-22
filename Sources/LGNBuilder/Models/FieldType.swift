@@ -39,6 +39,19 @@ extension FieldType {
         return false
     }
 
+    var isGETSafe: Bool {
+        let result: Bool
+
+        switch self {
+        case .String, .Int, .Float, .Bool: result = true
+        case .List: result = false // value.isGETSafe
+        case .Map: result = false
+        default: result = self.isCookie
+        }
+
+        return result
+    }
+
     var canBeDictionaryKey: Bool {
         let result: Bool
 
@@ -66,7 +79,7 @@ extension FieldType {
             result = try .List(
                 Self.init(from: Swift.String(string.dropFirst(listPrefix.count).dropLast(1)), shared: shared)
             )
-        case let str where str.starts(with: "Map["):
+        case let str where str.starts(with: mapPrefix):
             let cleanString = string.dropFirst(mapPrefix.count).dropLast(1)
             let components = cleanString.split(separator: ":")
             guard components.count == 2 else {

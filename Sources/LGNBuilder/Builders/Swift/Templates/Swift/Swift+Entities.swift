@@ -346,7 +346,7 @@ extension Template.Swift {
 
         return """
         public static func await(\(Template.Swift.mainInitArguments(from: entity, addFutures: true))) -> EventLoopFuture<\(entity.name)> {
-            \(futureField)Future.eventLoop.makeSucceededFuture(())\(body.joined(separator: "\n").indented(1))
+            \(futureField.name)Future.eventLoop.makeSucceededFuture(())\(body.joined(separator: "\n").indented(1))
             .map { (\(valuesTuple.joined(separator: ", "))) in
                 \(entity.name)(
                     \(Template.Swift.initEntityFromVars(from: entity).indented(3))
