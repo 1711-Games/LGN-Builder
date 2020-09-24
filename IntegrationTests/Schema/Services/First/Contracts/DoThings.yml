@@ -5,11 +5,12 @@ Request:
     stringFieldWithValidations:
       Type: String
       Validators:
-        Regex:
-          Expression: ^[a-zA-Zа-яА-Я0-9_\\- ]+$
-          Message: "Your input is invalid, sry"
-        MinLength: 3
-        MaxLength: 24
+        Cumulative:
+          Regex:
+            Expression: ^[a-zA-Zа-яА-Я0-9_\\- ]+$
+            Message: "Your input is invalid, sry"
+          MinLength: 3
+          MaxLength: 24
         Callback:
           Errors:
             - { Code: 322, Message: First callback error }
