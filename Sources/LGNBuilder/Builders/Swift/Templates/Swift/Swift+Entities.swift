@@ -50,13 +50,30 @@ extension Template.Swift {
             .map { (name: String, tuple) in
                 let (type, errors) = tuple
                 let callbackType = Template.Swift.validationCallbackType(fieldName: name, type: type, errors: errors)
-                return """
+
+                var result = """
                 public static func validate\(name.firstUppercased)(
                     _ callback: @escaping \(callbackType).Callback
                 ) {
                     self.validator\(name.firstUppercased)Closure = callback
                 }
                 """
+
+                if errors.count == 0 {
+                    result += """
+
+
+                    public static func validate\(name.firstUppercased)(
+                        _ callback: @escaping \(callbackType).CallbackWithSingleError
+                    ) {
+                        self.validate\(name.firstUppercased) { (value, eventLoop) -> EventLoopFuture<[ErrorTuple]?> in
+                            callback(value, eventLoop).map { $0.map { [$0] } }
+                        }
+                    }
+                    """
+                }
+
+                return result
             }
             .joined(separator: "\n\n")
     }
@@ -163,7 +180,7 @@ extension Template.Swift {
                 .reduce(validators: validatorFutures, context: context)
                 .flatMapThrowing {
                     guard $0.count == 0 else {
-                        throw LGNC.E.DecodeError($0.mapValues { [$0] })
+                        throw LGNC.E.DecodeError($0)
                     }
 
                     return self.init(
@@ -217,7 +234,6 @@ extension Template.Swift {
                 .validators
                 .map { anyValidator in
                     """
-
                     .flatMap {
                         \(Template.Swift.validator(from: anyValidator, field: field, entity: entity, shared: shared).indented(1))
                     }
@@ -324,6 +340,30 @@ extension Template.Swift {
                     context.locale,
                     on: eventLoop
                 ).mapThrowing { maybeError in if let error = maybeError { throw error } }
+                """
+        case let validator as Validator.Cumulative:
+            result =
+                """
+                Validation.cumulative(
+                    [
+                        \(validator
+                            .validators
+                            .map {
+                                """
+                                {
+                                    \(Template.Swift
+                                        .validator(from: $0, field: field, entity: entity, shared: shared)
+                                        .indented(1)
+                                    )
+                                }(),
+                                """
+                            }
+                            .joined(separator: "\n")
+                            .indented(2)
+                        )
+                    ],
+                    on: eventLoop
+                )
                 """
         default: fatalError("Unknown validator \(anyValidator)")
         }
@@ -461,10 +501,10 @@ extension Template.Swift {
                 .indented(1)
             )
 
-            public func getErrorTuple() -> (message: String, code: Int) {
+            public func getErrorTuple() -> ErrorTuple {
                 switch self {
                     \(enums
-                        .map { name, error in "case .\(name): return (message: self.rawValue, code: \(error.code))" }
+                        .map { name, error in "case .\(name): return (code: \(error.code), message: self.rawValue)" }
                         .joined(separator: "\n")
                         .indented(3)
                     )

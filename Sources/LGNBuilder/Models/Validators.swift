@@ -45,6 +45,7 @@ enum Validator {
         case IdenticalWith
         case Date
         case Callback
+        case Cumulative
 
         init(from rawName: String) throws {
             guard let value = Self(rawValue: rawName) else {
@@ -68,6 +69,7 @@ enum Validator {
         case .IdenticalWith: result = IdenticalWith.self
         case .Date:          result = Date.self
         case .Callback:      result = Callback.self
+        case .Cumulative:    result = Cumulative.self
         }
 
         return try result.init(from: params)
@@ -182,8 +184,13 @@ enum Validator {
         required init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
 
-            guard let rawInput = input as? Dict else {
-                throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
+            var _input = input
+            if let length = input as? Int {
+                _input = Dict([("Length", length)])
+            }
+
+            guard let rawInput = _input as? Dict else {
+                throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(_input))")
             }
 
             self.message = try Self.getMessage(from: rawInput.map { $0 }) // dr_hax.exe
@@ -305,6 +312,29 @@ enum Validator {
             }
 
             self.errors = try rawErrors.map { try Error(from: $0) }
+        }
+    }
+
+    struct Cumulative: AnyValidator {
+        let message: String? = nil
+        let validators: [AnyValidator]
+
+        init(from input: Any) throws {
+            let errorPrefix = "Could not decode validator \(Self.self)"
+
+            guard let rawInput = input as? Dict else {
+                throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
+            }
+
+            self.validators = try rawInput.map { name, rawValidator in
+                let validator = try Validator.initFrom(name: name, params: rawValidator)
+                if validator is Self {
+                    throw E.InvalidSchema(
+                        "\(errorPrefix): this validator cannot have nested Cumulative validator"
+                    )
+                }
+                return validator
+            }
         }
     }
 }

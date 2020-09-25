@@ -15,9 +15,7 @@
         "mapField":                   [{"code": 412, "message": "Value missing"}],
         "mapCustomField":             [{"code": 412, "message": "Value missing"}],
     },
-    "meta": {
-
-    },
+    "meta": {},
     "result": null,
     "success": false
 }

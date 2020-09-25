@@ -92,12 +92,7 @@ extension Field: Model {
             rawInput["NotEmpty"] = false
         }
         var validators: [AnyValidator]
-        if var rawValidators = rawInput[Key.validators] as? Dict {
-            for (k, v) in rawValidators where ["MinLength", "MaxLength"].contains(k) {
-                if let length = v as? Int {
-                    rawValidators[k] = Dict([("Length", length)])
-                }
-            }
+        if let rawValidators = rawInput[Key.validators] as? Dict {
             validators = try rawValidators.map { name, params in try Validator.initFrom(name: name, params: params) }
         } else if let rawValidators = rawInput[Key.validators] as? [String] {
             validators = try rawValidators.map { try Validator.initFrom(name: $0) }

@@ -1,0 +1,15 @@
+{
+    "errors": {
+        "dateField": [
+            {"code": 202, "message": "Still my birthday, lul"},
+            {"code": 203, "message": "Send help"}
+        ],
+        "stringFieldWithValidations": [
+            {"code": 412, "message": "Your input is invalid, sry"}, 
+            {"code": 416, "message": "Value must be at least 3 characters long"}
+        ]
+    },
+    "meta": {},
+    "result": null,
+    "success": false
+}
