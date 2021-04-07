@@ -7,6 +7,7 @@ struct Service {
     let info: [(String, String)]
     let transports: [(Transport, Int)]
     let contracts: Contracts
+    let WebSocketURI: String?
 }
 
 extension Service: Model {
@@ -71,6 +72,18 @@ extension Service: Model {
                     allowedTransports: transports.map { $0.0 },
                     shared: shared
                 )
+            )
+        }
+
+        self.WebSocketURI = rawInput["WebSocketURI"] as? String
+
+        let webSocketContracts = self.contracts.map(\.1).filter { $0.transports.contains(.WebSocket) }
+        if self.WebSocketURI == nil && webSocketContracts.count > 0 {
+            throw E.InvalidSchema(
+                """
+                Service '\(self.name)' has WebSocket contracts (\(webSocketContracts.map(\.name))), \
+                but 'webSocketURI' field is empty
+                """
             )
         }
     }

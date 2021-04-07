@@ -27,7 +27,7 @@ struct Contract {
         isGETSafe: Bool
     ) {
         self.name = name
-        self.URI = URI
+        self.URI = URI ?? name
         self.contentTypes = contentTypes
         self.transports = transports
         self.generateServicewiseExecutors = generateServicewiseExecutors

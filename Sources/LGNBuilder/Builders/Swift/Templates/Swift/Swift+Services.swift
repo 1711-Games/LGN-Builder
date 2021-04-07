@@ -14,7 +14,6 @@ extension Template.Swift {
         import LGNC
         import LGNS
         import Entita
-        import NIO
 
         public extension Services {
             enum \(service.name): Service {
@@ -118,20 +117,12 @@ extension Template.Swift {
                     return nil
                 }
                 return """
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).FutureClosureWithMeta) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
+                public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBodyWithMeta) {
+                    Contracts.\(name).guarantee(guaranteeBody)
                 }
 
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).FutureClosure) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
-                }
-
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).NonFutureClosureWithMeta) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
-                }
-
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).NonFutureClosure) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
+                public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBody) {
+                    Contracts.\(name).guarantee(guaranteeBody)
                 }
                 """
             }
@@ -150,8 +141,8 @@ extension Template.Swift {
                     at address: LGNCore.Address,
                     with request: Contracts.\(name).Request,
                     using client: LGNCClient
-                ) -> EventLoopFuture<Contracts.\(name).Response> {
-                    return Contracts.\(name).execute(at: address, with: request, using: client)
+                ) async throws -> Contracts.\(name).Response {
+                    try await Contracts.\(name).execute(at: address, with: request, using: client)
                 }
                 """
             }

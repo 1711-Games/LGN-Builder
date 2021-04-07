@@ -19,12 +19,16 @@ struct Entity {
         isMutable: Bool,
         keyDictionary: [String: String],
         isSystem: Bool = false
-    ) {
+    ) throws {
         self.name = name
         self.fields = fields
         self.isMutable = isMutable
         self.keyDictionary = keyDictionary
         self.isSystem = isSystem
+
+        try self.fields.forEach { field in
+            try field.performSanityCheck(entity: self)
+        }
     }
 }
 
@@ -79,7 +83,7 @@ extension Entity: Model {
             throw E.InvalidSchema("\(errorPrefix): there are no fields in this entity")
         }
 
-        self = Self(
+        self = try Self(
             name: name,
             fields: fields,
             isMutable: rawInput[Key.isMutable] as? Bool ?? false,
@@ -90,7 +94,7 @@ extension Entity: Model {
 }
 
 extension Entity {
-    static let empty: Self = Self(
+    static let empty: Self = try! Self(
         name: EntityType.System.Empty.rawValue,
         fields: [],
         isMutable: false,
@@ -98,7 +102,7 @@ extension Entity {
         isSystem: true
     )
 
-    static let cookie: Self = Self(
+    static let cookie: Self = try! Self(
         name: EntityType.System.Cookie.rawValue,
         fields: [],
         isMutable: false,

@@ -19,7 +19,6 @@ extension Template.Swift {
                 Template.Swift.classFields(from: entity),
                 Template.Swift.initializerCallbacksVars(from: entity),
                 Template.Swift.mainInit(from: entity),
-                Template.Swift.awaitInit(from: entity),
                 Template.Swift.initWithValidation(from: entity, shared: shared),
                 Template.Swift.initFromDictionary(from: entity),
                 Template.Swift.getDictionary(from: entity),
@@ -66,8 +65,11 @@ extension Template.Swift {
                     public static func validate\(name.firstUppercased)(
                         _ callback: @escaping \(callbackType).CallbackWithSingleError
                     ) {
-                        self.validate\(name.firstUppercased) { (value, eventLoop) -> EventLoopFuture<[ErrorTuple]?> in
-                            callback(value, eventLoop).map { $0.map { [$0] } }
+                        self.validate\(name.firstUppercased) { (value) async -> [ErrorTuple]? in
+                            guard let error = await callback(value) else {
+                                return nil
+                            }
+                            return [error]
                         }
                     }
                     """
@@ -128,27 +130,18 @@ extension Template.Swift {
 
     static func initWithValidation(from entity: Entity, shared: Shared) -> String {
         """
-        public static func initWithValidation(
-            from dictionary: Entita.Dict, context: LGNCore.Context
-        ) -> EventLoopFuture<\(entity.name)> {
-            \(entity.fields.count > 0 ? "let eventLoop = context.eventLoop" : "")
-
+        public static func initWithValidation(from dictionary: Entita.Dict) async throws -> Self {
             \(Template.Swift.ensureNecessaryItems(from: entity).indented(1))
 
             \(entity
                 .fields
                 .map { field in
-                    let declaration = "let \(field.name): \(Template.Swift.prepareType(field: field))?\(field.isNullable ? "?" : "")"
+                    let declaration = "let \(field.internalName): \(Template.Swift.prepareType(field: field))?\(field.isNullable ? "?" : "")"
                     let result: String
 
                     if field.type.isCookie {
                         result = """
-                        \(declaration)
-                        do {
-                            \(field.name) = try self.extractCookie(param: \"\(field.name)\", from: dictionary, context: context)
-                        } catch {
-                            return eventLoop.makeFailedFuture(error)
-                        }
+                        \(declaration) = try await self.extractCookie(param: \"\(field.name)\", from: dictionary)
                         """
                     } else {
                         let assign = "try? (self.extract(param: \"\(field.name)\", from: dictionary\(field.isNullable ? ", isOptional: true" : "")) as \(Template.Swift.prepareType(field: field))\(field.isNullable ? "?" : ""))"
@@ -161,39 +154,37 @@ extension Template.Swift {
                 .indented(1)
             )
 
-            let validatorFutures: [String: EventLoopFuture<Void>] = [
+            let validatorClosures: [String: ValidationClosure] = [
                 \(entity.fields.count == 0
                     ? ":"
                     : entity
                         .fields
                         .map { field in
                             """
-                            "\(field.name)": \(Template.Swift.validationFuturesChain(from: field, entity: entity, shared: shared)),
+                            "\(field.name)": \(Template.Swift.validationClosuressChain(from: field, entity: entity, shared: shared)),
                             """
                         }
                         .joined(separator: "\n")
+                        .removedSingleNewlines
                         .indented(2)
                 )
             ]
 
-            return self
-                .reduce(validators: validatorFutures, context: context)
-                .flatMapThrowing {
-                    guard $0.count == 0 else {
-                        throw LGNC.E.DecodeError($0)
-                    }
+            let validationErrors = await self.reduce(closures: validatorClosures)
+            guard validationErrors.isEmpty else {
+                throw LGNC.E.DecodeError(validationErrors)
+            }
 
-                    return self.init(
-                        \(Template.Swift.initEntityFromVars(from: entity, forceUnwrap: true).indented(4))
-                    )
-                }
+            return self.init(
+                \(Template.Swift.initEntityFromVars(from: entity, forceUnwrap: true).indented(2))
+            )
         }
         """
     }
 
     static func ensureNecessaryItems(from entity: Entity) -> String {
         """
-        if let error = self.ensureNecessaryItems(
+        try self.ensureNecessaryItems(
             in: dictionary,
             necessaryItems: [
                 \(entity
@@ -207,96 +198,70 @@ extension Template.Swift {
                     .indented(2)
                 )
             ]
-        ) {
-            return eventLoop.makeFailedFuture(error)
-        }
+        )
         """
     }
 
-    static func validationFuturesChain(from field: Field, entity: Entity, shared: Shared) -> String {
+    static func validationClosuressChain(from field: Field, entity: Entity, shared: Shared) -> String {
         var isOptionalThrow: String = ""
         if field.isNullable {
             isOptionalThrow =
             """
 
-            if \(field.name) == nil {
+            if \(Field.internalPrefix) == nil {
                 throw Validation.Error.SkipMissingOptionalValueValidators()
             }
-            """.indented(2)
+            """.indented(1)
         }
         return """
-        eventLoop
-            .submit {
-                guard let \(field.isNullable ? field.name : "_") = \(field.name) else {
-                    throw Validation.Error.MissingValue(context.locale\(field.missingMessage.map { ", message: \"\($0)\"" } ?? ""))
-                }\(isOptionalThrow)
-            }\(field
+        {
+            guard let \(field.isNullable ? Field.internalPrefix : "_") = \(field.internalName) else {
+                throw Validation.Error.MissingValue(\(field.missingMessage.map { "message: \"\($0)\"" } ?? ""))
+            }\(isOptionalThrow)
+            \(field
                 .validators
                 .map { anyValidator in
                     """
-                    .flatMap {
-                        \(Template.Swift.validator(from: anyValidator, field: field, entity: entity, shared: shared).indented(1))
-                    }
+                    \(Template.Swift.validator(from: anyValidator, field: field, entity: entity, shared: shared))
                     """
                 }
                 .joined(separator: "\n")
-                .indented(1)
             )
+        }
         """
     }
 
     static func validator(from anyValidator: AnyValidator, field: Field, entity: Entity, shared: Shared) -> String {
-        let validate = "validate(\(field.name)!, context.locale)"
-        let succ = "return eventLoop.makeSucceededFuture()"
-        let err = "return eventLoop.makeFailedFuture(error)"
+        let internalName = field.isNullable ? "unwrapped_\(field.internalName)" : field.internalName
+        let validate = "validate(\(internalName)!)"
+
         func message(validator: AnyValidator, comma: Bool = true) -> String {
             validator.message.map { "\(comma ? ", " : "")message: \"\($0)\"" } ?? ""
         }
-        func ifOptional(field: Field) -> String {
-            var result = ""
 
-            if field.isNullable {
-                result = "let \(field.name) = \(field.name), "
-            }
-
-            return result
-        }
-
-        let result: String
+        var result: String = "try await Validation."
 
         switch anyValidator {
         case let validator as Validator.Regex:
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.Regexp(pattern: "\(validator.expression)"\(message(validator: validator))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                Regexp(pattern: "\(validator.expression)"\(message(validator: validator))).\(validate)
                 """
         case let validator as Validator.In:
             let allowedValues = validator.allowedValues.map { "\"\($0)\"" }.joined(separator: ", ")
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.In(allowedValues: [\(allowedValues)]\(message(validator: validator))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                In(allowedValues: [\(allowedValues)]\(message(validator: validator))).\(validate)
                 """
         case let validator as Validator.NotEmpty:
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.NotEmpty(\(message(validator: validator, comma: false))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                NotEmpty(\(message(validator: validator, comma: false))).\(validate)
                 """
         case let validator as Validator.UUID:
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.UUID(\(message(validator: validator, comma: false))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                UUID(\(message(validator: validator, comma: false))).\(validate)
                 """
         case let validator as Validator.Length:
             let name: String
@@ -305,95 +270,62 @@ extension Template.Swift {
             case let concreteValidator as Validator.MaxLength: name = concreteValidator.name
             default: fatalError("Unknown length validator \(validator)")
             }
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.Length.\(name)(length: \(validator.length)\(message(validator: validator))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                Length.\(name)(length: \(validator.length)\(message(validator: validator))).\(validate)
                 """
         case let validator as Validator.IdenticalWith:
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.Identical(right: \(validator.field)!\(message(validator: validator))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                Identical(right: \(validator.fieldInternal)!\(message(validator: validator))).\(validate)
                 """
         case let validator as Validator.Date:
             let format = validator.format ?? shared.dateFormat
-            result =
+            result +=
                 """
-                if \(ifOptional(field: field))let error = Validation.Date(\(format.map { "format: \"\($0)\"" } ?? "")\(message(validator: validator, comma: format != nil))).\(validate) {
-                    \(err)
-                }
-                \(succ)
+                Date(\(format.map { "format: \"\($0)\"" } ?? "")\(message(validator: validator, comma: format != nil))).\(validate)
                 """
         case let validator as Validator.Callback:
             result =
                 """
-                guard \(ifOptional(field: field))let validator = self.validator\(field.name.firstUppercased)Closure else {
-                    \(succ)
+                if let validator = self.validator\(field.name.firstUppercased)Closure {
+                    try await \(Template.Swift.callbackValidatorType(fieldName: field.name, type: field.type, errors: validator.errors))(callback: validator).validate(\(internalName)!)
                 }
-                return \(Template.Swift.callbackValidatorType(fieldName: field.name, type: field.type, errors: validator.errors))(callback: validator).validate(
-                    \(field.name)!,
-                    context.locale,
-                    on: eventLoop
-                ).mapThrowing { maybeError in if let error = maybeError { throw error } }
-                """
+                """.indented(1, includingFirst: true)
         case let validator as Validator.Cumulative:
-            result =
+            result +=
                 """
-                Validation.cumulative(
-                    [
-                        \(validator
-                            .validators
-                            .map {
-                                """
-                                {
-                                    \(Template.Swift
-                                        .validator(from: $0, field: field, entity: entity, shared: shared)
-                                        .indented(1)
-                                    )
-                                }(),
-                                """
-                            }
-                            .joined(separator: "\n")
-                            .indented(2)
-                        )
-                    ],
-                    on: eventLoop
-                )
-                """
+                cumulative([
+                    \(validator
+                        .validators
+                        .map {
+                            """
+                            {
+                                \(Template.Swift
+                                    .validator(from: $0, field: field, entity: entity, shared: shared)
+                                    .indented(1)
+                                )
+                            },
+                            """
+                        }
+                        .joined(separator: "\n")
+                        .indented(1)
+                    )
+                ])
+                """.indented(1)
         default: fatalError("Unknown validator \(anyValidator)")
         }
 
+        if field.isNullable {
+            result =
+                """
+                if let \(internalName) = \(field.internalName) {
+                    \(result.indented(1))
+                }
+                """.indented(1)
+        }
+
         return result
-    }
-
-    static func awaitInit(from entity: Entity) -> String {
-        guard entity.needsAwait, let futureField = entity.futureField else {
-            return ""
-        }
-        var body = [String]()
-        var valuesTuple = [String]()
-        for field in entity.fields where field.canBeFuture {
-            var entry = ".flatMap { (\(valuesTuple.joined(separator: ", "))) in\n"
-            valuesTuple.append(field.name)
-            entry += "\(TAB)\(field.name)Future.map { \(field.name) in (\(valuesTuple.joined(separator: ", "))) }\n}"
-            body.append(entry)
-        }
-
-        return """
-        public static func await(\(Template.Swift.mainInitArguments(from: entity, addFutures: true))) -> EventLoopFuture<\(entity.name)> {
-            \(futureField.name)Future.eventLoop.makeSucceededFuture(())\(body.joined(separator: "\n").indented(1))
-            .map { (\(valuesTuple.joined(separator: ", "))) in
-                \(entity.name)(
-                    \(Template.Swift.initEntityFromVars(from: entity).indented(3))
-                )
-            }
-        }
-        """
     }
 
     static func initEntityFromVars(from entity: Entity, prefix: String = "", forceUnwrap: Bool = false) -> String {
@@ -402,7 +334,7 @@ extension Template.Swift {
             .filter { $0.alwaysInitiated == false }
             //.sorted(by: { $0.name < $1.name })
             .map { field in
-                "\(field.name): \(prefix)\(field.name)\(forceUnwrap ? "!" : "")"
+                "\(field.name): \(prefix)\(field.internalName)\(forceUnwrap ? "!" : "")"
             }
             .joined(separator: ",\n")
     }

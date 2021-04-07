@@ -1,4 +1,6 @@
 struct Field {
+    static let internalPrefix = "value"
+
     let name: String
     let type: FieldType
     let validators: [AnyValidator]
@@ -9,6 +11,10 @@ struct Field {
     let defaultEmpty: Bool
     let defaultNull: Bool
     let missingMessage: String?
+
+    var internalName: String {
+        "\(Self.internalPrefix)_\(self.name)"
+    }
 
     init(
         name: String,
@@ -38,6 +44,12 @@ struct Field {
         self.isMutable = isMutable
 
         return self
+    }
+
+    func performSanityCheck(entity: Entity) throws {
+        try self.validators.forEach { validator in
+            try validator.performSanityCheck(entity: entity)
+        }
     }
 }
 

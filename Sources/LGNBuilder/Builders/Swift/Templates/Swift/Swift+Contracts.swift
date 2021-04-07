@@ -14,7 +14,7 @@ extension Template.Swift {
                 Template.Swift.entityTypealiases(from: contract),
                 "public static let URI = \"\(contract.URI ?? contract.name)\"",
                 "public static let transports: [LGNCore.Transport] = [\(contract.transports.map { "." + $0.rawValue }.joined(separator: ", "))]",
-                "public static var guaranteeClosure: Optional<Closure> = nil",
+                "public static var guaranteeBody: Optional<CanonicalGuaranteeBody> = nil",
                 "public static let contentTypes: [LGNCore.ContentType] = \(Template.Swift.contentTypes(from: contract.contentTypes).indented(1))",
                 contract.isGETSafe ? "public static let isGETSafe = true" : "",
                 "",
