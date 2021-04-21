@@ -21,6 +21,7 @@ extension Template.Swift {
                     "public enum Contracts {}",
                     Template.Swift.transports(from: service.transports),
                     Template.Swift.info(from: service.info),
+                    Template.Swift.webSocketURI(from: service),
                     Template.Swift.guaranteeStatuses(from: service.contracts),
                     Template.Swift.contractMap(from: service.contracts),
                     Template.Swift.callbackSetters(from: service.contracts),
@@ -72,6 +73,18 @@ extension Template.Swift {
                 )
             ]
             """
+        }
+
+        return result
+    }
+
+    static func webSocketURI(from service: Service) -> String {
+        let result: String
+
+        if let webSocketURI = service.WebSocketURI {
+            result = "public static var webSocketURI: String? = \"\(webSocketURI)\""
+        } else {
+            result = ""
         }
 
         return result

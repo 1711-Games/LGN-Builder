@@ -1,10 +1,13 @@
+import Foundation
+import Crypto
+
 typealias Contracts = [(String, Contract)]
 
 struct Contract {
     let name: String
     let URI: String?
     let contentTypes: [ContentType]?
-    var transports: [Transport]
+    let transports: [Transport]
     let generateServicewiseExecutors: Bool
     let generateServicewiseGuarantee: Bool
     let generateServicewiseValidators: Bool
@@ -12,6 +15,13 @@ struct Contract {
     let response: EntityType
     let isPublic: Bool
     let isGETSafe: Bool
+
+//    internal lazy var version: String = {
+//        guard let selfStringData = String(describing: self).data(using: .utf8) else {
+//            fatalError("Could not hash contract \(Self.self)")
+//        }
+//        return Data(Insecure.MD5.hash(data: selfStringData)).map { String(format: "%02hhx", $0) }.joined()
+//    }()
 
     init(
         name: String,
@@ -37,6 +47,8 @@ struct Contract {
         self.response = response
         self.isPublic = isPublic
         self.isGETSafe = isGETSafe
+
+//        print(self.version)
     }
 
     mutating func excludeTransports(_ allowedTransports: [Transport: Int]) -> Self {
