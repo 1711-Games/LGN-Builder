@@ -130,8 +130,8 @@ extension Template.Swift {
                     return nil
                 }
                 return """
-                public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBodyWithMeta) {
-                    Contracts.\(name).guarantee(guaranteeBody)
+                public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBodyCanonical) {
+                    Contracts.\(name).guaranteeCanonical(guaranteeBody)
                 }
 
                 public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBody) {
