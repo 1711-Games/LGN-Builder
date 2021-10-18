@@ -4,6 +4,8 @@ import Crypto
 typealias Contracts = [(String, Contract)]
 
 struct Contract {
+    enum Diagnostics {}
+
     let name: String
     let URI: String?
     let contentTypes: [ContentType]?
@@ -15,6 +17,9 @@ struct Contract {
     let response: EntityType
     let isPublic: Bool
     let isGETSafe: Bool
+    let isResponseStructured: Bool
+    let isResponseHTML: Bool
+    let isResponseFile: Bool
 
 //    internal lazy var version: String = {
 //        guard let selfStringData = String(describing: self).data(using: .utf8) else {
@@ -34,7 +39,10 @@ struct Contract {
         request: EntityType,
         response: EntityType,
         isPublic: Bool,
-        isGETSafe: Bool
+        isGETSafe: Bool,
+        isResponseStructured: Bool,
+        isResponseHTML: Bool,
+        isResponseFile: Bool
     ) {
         self.name = name
         self.URI = URI ?? name
@@ -47,8 +55,9 @@ struct Contract {
         self.response = response
         self.isPublic = isPublic
         self.isGETSafe = isGETSafe
-
-//        print(self.version)
+        self.isResponseStructured = isResponseStructured
+        self.isResponseHTML = isResponseHTML
+        self.isResponseFile = isResponseFile
     }
 
     mutating func excludeTransports(_ allowedTransports: [Transport: Int]) -> Self {
@@ -135,27 +144,19 @@ extension Contract: Model {
         )
 
         let isGETSafe = rawInput[Key.isGETSafe] as? Bool ?? false
-        if isGETSafe {
-            if !transports.contains(.HTTP) {
-                throw E.InvalidSchema(
-                    """
-                    \(errorPrefix): IsGETSafe is set to 'true', but contract doesn't have HTTP transport
-                    """
-                )
-            }
+        try Diagnostics.GETSafe(
+            isGETSafe: isGETSafe,
+            transports: transports,
+            request: request,
+            errorPrefix: errorPrefix
+        )
 
-            let nonGETSafeFields = request.wrapped.fields.filter { !$0.type.isGETSafe }
-            if nonGETSafeFields.count > 0 {
-                throw E.InvalidSchema(
-                    """
-                    \(errorPrefix): IsGETSafe is set to 'true', but contract has non-GET-safe fields: \
-                    \(nonGETSafeFields
-                        .map { "'\($0.name)' (of type '\($0.type.asString)')" }
-                        .joined(separator: ", ")
-                    )
-                    """
-                )
-            }
+        let isResponseHTML = response.isHTML
+        let isResponseFile = response.isFile
+        let isResponseStructured = !isResponseFile && !isResponseHTML
+
+        guard isResponseStructured || isResponseHTML || isResponseFile else {
+            throw E.InvalidSchema("\(errorPrefix): response neither structured, nor HTML, nor file")
         }
 
         self.init(
@@ -169,7 +170,10 @@ extension Contract: Model {
             request: request,
             response: response,
             isPublic: rawInput[Key.isPublic] as? Bool ?? false,
-            isGETSafe: isGETSafe
+            isGETSafe: isGETSafe,
+            isResponseStructured: isResponseStructured,
+            isResponseHTML: isResponseHTML,
+            isResponseFile: isResponseFile
         )
     }
 
@@ -202,5 +206,39 @@ extension Contract: Model {
         }
 
         return result
+    }
+}
+
+extension Contract.Diagnostics {
+    static func GETSafe(
+        isGETSafe: Bool,
+        transports: [Transport],
+        request: EntityType,
+        errorPrefix: String
+    ) throws {
+        guard isGETSafe else {
+            return
+        }
+
+        if !transports.contains(.HTTP) {
+            throw E.InvalidSchema(
+                """
+                \(errorPrefix): IsGETSafe is set to 'true', but contract doesn't have HTTP transport
+                """
+            )
+        }
+
+        let nonGETSafeFields = request.wrapped.fields.filter { !$0.type.isGETSafe }
+        if nonGETSafeFields.count > 0 {
+            throw E.InvalidSchema(
+                """
+                \(errorPrefix): IsGETSafe is set to 'true', but contract has non-GET-safe fields: \
+                \(nonGETSafeFields
+                    .map { "'\($0.name)' (of type '\($0.type.asString)')" }
+                    .joined(separator: ", ")
+                )
+                """
+            )
+        }
     }
 }

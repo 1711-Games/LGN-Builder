@@ -64,3 +64,9 @@ internal extension StringProtocol {
     @usableFromInline
     var firstUppercased: String { prefix(1).uppercased() + dropFirst() }
 }
+
+internal extension Bool {
+    var text: String {
+        self ? "true" : "false"
+    }
+}

@@ -65,8 +65,8 @@ extension Template.Swift {
                     public static func validate\(name.firstUppercased)(
                         _ callback: @escaping \(callbackType).CallbackWithSingleError
                     ) {
-                        self.validate\(name.firstUppercased) { (value) async -> [ErrorTuple]? in
-                            guard let error = await callback(value) else {
+                        self.validate\(name.firstUppercased) { (value) async throws -> [ErrorTuple]? in
+                            guard let error = try await callback(value) else {
                                 return nil
                             }
                             return [error]
@@ -144,7 +144,7 @@ extension Template.Swift {
                         \(declaration) = try await self.extractCookie(param: \"\(field.name)\", from: dictionary)
                         """
                     } else {
-                        let assign = "try? (self.extract(param: \"\(field.name)\", from: dictionary\(field.isNullable ? ", isOptional: true" : "")) as \(Template.Swift.prepareType(field: field))\(field.isNullable ? "?" : ""))"
+                        let assign = "try? (self.extract\(field.type.isFile ? "Arbitrary" : "")(param: \"\(field.name)\", from: dictionary\(field.isNullable ? ", isOptional: true" : "")) as \(Template.Swift.prepareType(field: field))\(field.isNullable ? "?" : ""))"
                         result = "\(declaration) = \(assign)"
                     }
 

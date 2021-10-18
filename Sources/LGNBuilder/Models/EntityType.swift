@@ -2,6 +2,8 @@ struct EntityType {
     enum System: String {
         case Empty
         case Cookie
+        case File
+        case HTML
 
         var entity: Entity {
             let result: Entity
@@ -9,6 +11,8 @@ struct EntityType {
             switch self {
             case .Empty: result = Entity.empty
             case .Cookie: result = Entity.cookie
+            case .File: result = Entity.file
+            case .HTML: result = Entity.html
             }
 
             return result
@@ -20,6 +24,14 @@ struct EntityType {
 
     var isSystem: Bool {
         self.isShared && self.wrapped.isSystem
+    }
+
+    var isFile: Bool {
+        self.isSystem && self.wrapped.name == System.File.rawValue
+    }
+
+    var isHTML: Bool {
+        self.isSystem && self.wrapped.name == System.HTML.rawValue
     }
 
     static func shared(_ entity: Entity) -> Self {

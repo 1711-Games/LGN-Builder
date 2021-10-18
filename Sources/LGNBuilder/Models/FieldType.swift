@@ -39,6 +39,13 @@ extension FieldType {
         return false
     }
 
+    var isFile: Bool {
+        if case let .Custom(type) = self {
+            return type.name == EntityType.System.File.rawValue
+        }
+        return false
+    }
+
     var isGETSafe: Bool {
         let result: Bool
 
@@ -96,5 +103,11 @@ extension FieldType {
         }
 
         self = result
+    }
+}
+
+extension FieldType: Equatable {
+    static func == (lhs: FieldType, rhs: FieldType) -> Bool {
+        lhs.asString == rhs.asString
     }
 }

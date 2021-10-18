@@ -23,6 +23,9 @@ struct Build: ParsableCommand {
     @Option(name: .shortAndLong, help: "Output folder for compiled code")
     var output: String
 
+    @Option(name: .customLong("go-package-prefix"), help: "Package name prefix for Go lang")
+    var goLangPackagePrefix: String?
+
     @Argument(help: "Compile only given services")
     var services: [String] = []
 

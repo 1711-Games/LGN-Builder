@@ -109,4 +109,20 @@ extension Entity {
         keyDictionary: [:],
         isSystem: true
     )
+
+    static let file: Self = try! Self(
+        name: EntityType.System.File.rawValue,
+        fields: [],
+        isMutable: false,
+        keyDictionary: [:],
+        isSystem: true
+    )
+
+    static let html: Self = try! Self(
+        name: EntityType.System.HTML.rawValue,
+        fields: [],
+        isMutable: false,
+        keyDictionary: [:],
+        isSystem: true
+    )
 }
