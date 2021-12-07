@@ -1,22 +1,22 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.5
 
 import PackageDescription
 
 let package = Package(
     name: "LGNBuilder",
-    platforms: [.macOS(.v10_15)],
+    platforms: [.macOS(.v12)],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.2.0")),
         .package(url: "https://github.com/kirilltitov/Yams", .branch("dictionary-as-pairs-mode")),
-        .package(url: "https://github.com/apple/swift-crypto", from: "1.1.0"),
+        .package(url: "https://github.com/1711-Games/LGN-Log", .upToNextMinor(from: "0.4.0")),
     ],
     targets: [
-        .target(
+        .executableTarget(
             name: "LGNBuilder",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Yams", package: "Yams"),
-                .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "LGNLog", package: "LGN-Log"),
             ]
         ),
         .testTarget(

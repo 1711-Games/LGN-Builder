@@ -1,5 +1,5 @@
 import Foundation
-import Crypto
+import LGNLog
 
 typealias Contracts = [(String, Contract)]
 
@@ -7,7 +7,7 @@ struct Contract {
     enum Diagnostics {}
 
     let name: String
-    let URI: String?
+    let URI: String
     let contentTypes: [ContentType]?
     let transports: [Transport]
     let generateServicewiseExecutors: Bool
@@ -30,7 +30,7 @@ struct Contract {
 
     init(
         name: String,
-        URI: String?,
+        URI: String,
         contentTypes: [ContentType]?,
         transports: [Transport],
         generateServicewiseExecutors: Bool,
@@ -45,7 +45,7 @@ struct Contract {
         isResponseFile: Bool
     ) {
         self.name = name
-        self.URI = URI ?? name
+        self.URI = Glob.caseSensitiveURIs ? URI : URI.lowercased()
         self.contentTypes = contentTypes
         self.transports = transports
         self.generateServicewiseExecutors = generateServicewiseExecutors
@@ -68,6 +68,7 @@ struct Contract {
 extension Contract: Model {
     enum Key: String {
         case transports = "Transports"
+        case forcedURI = "ForcedURI"
         case URI = "URI"
         case contentTypes = "ContentTypes"
         case generateServicewiseExecutors = "GenerateServicewiseExecutors"
@@ -85,6 +86,8 @@ extension Contract: Model {
     }
 
     init(name: String, from input: Any, allowedTransports: [Transport], shared: Shared) throws {
+        Logger.current.debug("Decoding contract '\(name)'")
+
         let errorPrefix = "Could not decode contract '\(name)'"
 
         guard var rawInput = input as? Dict else {
@@ -104,11 +107,16 @@ extension Contract: Model {
         }
 
         if rawInput[Key.transports] == nil {
-            print("Assuming default transports (\(defaultTransports)) for contract '\(name)'")
+            Logger.current.notice("Assuming default transports (\(defaultTransports)) for contract '\(name)'")
             rawInput[Key.transports] = []
         }
 
-        guard let rawTransports = rawInput[Key.transports] as? [Any] else {
+        let rawTransports: [Any]
+        if let _rawTransports = rawInput[Key.transports] as? [Any] {
+            rawTransports = _rawTransports
+        } else if let _rawTransport = rawInput[Key.transports] as? String {
+            rawTransports = [_rawTransport]
+        } else {
             throw E.InvalidSchema("\(errorPrefix): input does not contain '\(Key.transports.rawValue)' key or invalid")
         }
         let transports: [Transport] = try rawTransports.compactMap { rawTransport in
@@ -161,7 +169,7 @@ extension Contract: Model {
 
         self.init(
             name: name,
-            URI: rawInput[Key.URI] as? String,
+            URI: rawInput[Key.forcedURI] as? String ?? rawInput[Key.URI] as? String ?? name,
             contentTypes: contentTypes,
             transports: transports,
             generateServicewiseExecutors: rawInput[Key.generateServicewiseExecutors] as? Bool ?? false,
@@ -183,6 +191,8 @@ extension Contract: Model {
         shared: Shared,
         errorPrefix: String
     ) throws -> EntityType {
+        Logger.current.debug("Decoding '\(key.rawValue)' entity")
+
         let result: EntityType
 
         guard input[key] != nil else {

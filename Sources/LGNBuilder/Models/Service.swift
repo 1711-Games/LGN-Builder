@@ -1,6 +1,7 @@
 import Yams
+import LGNLog
 
-let defaultTransports: [(String, Any)] = [(Transport.LGNS.rawValue, 1711)]
+let defaultTransports: [(String, Any)] = [(Transport.HTTP.rawValue, 8080)]
 
 struct Service {
     let name: String
@@ -43,7 +44,7 @@ extension Service: Model {
         self.info = info
 
         if rawInput[Key.transports] == nil {
-            print("Assuming default transports (\(defaultTransports)) for service '\(name)'")
+            Logger.current.notice("Assuming default transports (\(defaultTransports)) for service '\(name)'")
             rawInput[Key.transports] = defaultTransports
         }
         guard let rawTransports = rawInput[Key.transports] as? Dict else {
@@ -65,9 +66,9 @@ extension Service: Model {
         }
         self.contracts = try rawContracts.map { contractName, rawContract in
             (
-                contractName,
+                contractName.safe,
                 try Contract(
-                    name: contractName,
+                    name: contractName.safe,
                     from: rawContract,
                     allowedTransports: transports.map { $0.0 },
                     shared: shared

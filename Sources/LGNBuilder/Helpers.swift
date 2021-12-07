@@ -16,6 +16,18 @@ struct Profiler {
     }
 }
 
+enum Glob {
+    static var caseSensitiveURIs = false
+}
+
+internal extension String {
+    var safe: Self {
+        self
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined(separator: "_")
+    }
+}
+
 internal extension Dictionary where Key == String {
     subscript<K: RawRepresentable>(key: K) -> Value? where K.RawValue == String {
         get {

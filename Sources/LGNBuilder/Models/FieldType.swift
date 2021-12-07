@@ -96,7 +96,8 @@ extension FieldType {
         default:
             guard let sharedEntity = shared.getEntity(byName: string) else {
                 throw E.InvalidSchema(
-                    "Could not decode custom field type '\(string)': entity '\(string)' not found in shared"
+                    "Could not decode custom field type '\(string)': entity '\(string)' not found in shared "
+                    + "(hint: entity might not have yet been decoded because of file ordering, try reordering YAML definitions)"
                 )
             }
             result = .Custom(sharedEntity)

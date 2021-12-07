@@ -1,5 +1,6 @@
 import Foundation
 import ArgumentParser
+import LGNLog
 
 struct Build: ParsableCommand {
     static var configuration = CommandConfiguration(
@@ -35,12 +36,18 @@ struct Build: ParsableCommand {
     )
     var dryRun = false
 
-    @Flag(name: .long, help: "Prints assembled schema (no codegen will be done)")
-    var emitSchema = false
+    @Flag(name: .long, help: "Prints assembled raw schema (no codegen will be done)")
+    var emitRawSchema = false
+
+    @Flag(name: .long, help: "Prints assembled processed schema with all substitutions (no codegen will be done)")
+    var emitProcessedSchema = false
+
+    @Flag(name: .long, help: "Makes LGNC router case-sensitive (so that `Profile/Info` wouldn't route to `profile/info`)")
+    var caseSensitiveUris = false
 
     func run() throws {
         if self.dryRun {
-            print("THIS IS A DRY RUN, NO FILES WILL BE WRITTEN")
+            Logger.current.notice("THIS IS A DRY RUN, NO FILES WILL BE WRITTEN")
         }
 
         let manager = FileManager.default
@@ -69,6 +76,8 @@ struct Build: ParsableCommand {
             )
         }
 
+        Glob.caseSensitiveURIs = self.caseSensitiveUris
+
         try Builder
             .create(from: self.language)
             .init(
@@ -76,7 +85,8 @@ struct Build: ParsableCommand {
                 outputDirectory: outputDirectoryURL,
                 services: self.services,
                 dryRun: self.dryRun,
-                emitSchema: self.emitSchema
+                emitRawSchema: self.emitRawSchema,
+                emitProcessedSchema: self.emitProcessedSchema
             )
             .build()
     }

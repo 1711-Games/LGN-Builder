@@ -24,7 +24,7 @@ extension Template.Swift {
             \(blocks([
                 "public typealias ParentService = Services.\(service.name)",
                 Template.Swift.entityTypealiases(from: contract),
-                "public static let URI = \"\(contract.URI ?? contract.name)\"",
+                "public static let URI = \"\(contract.URI)\"",
                 "public static let transports: [LGNCore.Transport] = [\(contract.transports.map { "." + $0.rawValue }.joined(separator: ", "))]",
                 contract.isResponseStructured == false ? "public static let isResponseStructured: Bool = false" : "",
                 "public static var _guaranteeBody: Optional<CanonicalGuaranteeBody> = nil",
