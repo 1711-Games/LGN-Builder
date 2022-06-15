@@ -3,10 +3,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "LGNBuilder",
+    name: "LGN-Builder",
     platforms: [.macOS(.v12)],
     products: [
-        .executable(name: "LGNBuilder", targets: ["LGNBuilder"]),
+        .executable(name: "LGN-Builder", targets: ["LGN-Builder"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.2.0")),
@@ -15,7 +15,7 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "LGNBuilder",
+            name: "LGN-Builder",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "Yams", package: "Yams"),
@@ -23,8 +23,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "LGNBuilderTests",
-            dependencies: ["LGNBuilder"]
+            name: "LGN-BuilderTests",
+            dependencies: ["LGN-Builder"]
         ),
     ]
 )

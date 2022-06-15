@@ -4,7 +4,7 @@ import LGNLog
 
 struct Build: ParsableCommand {
     static var configuration = CommandConfiguration(
-        commandName: "LGNBuilder",
+        commandName: "LGN-Builder",
         abstract: "Builds LGN contracts from provided schema directory for target language."
     )
 
