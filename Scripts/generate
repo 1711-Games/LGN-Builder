@@ -7,4 +7,4 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 swift build --package-path ${DIR}/.. -c debug 
 
-${DIR}/../.build/debug/LGN-Builder "$@"
+${DIR}/../.build/debug/LGNBuilder "$@"

@@ -12,7 +12,7 @@ final class LGNBuilderTests: XCTestCase {
             return
         }
 
-        let fooBinary = productsDirectory.appendingPathComponent("LGN-Builder")
+        let fooBinary = productsDirectory.appendingPathComponent("LGNBuilder")
 
         let process = Process()
         process.executableURL = fooBinary
