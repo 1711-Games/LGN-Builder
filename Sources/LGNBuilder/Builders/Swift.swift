@@ -6,20 +6,23 @@ public extension Builder {
         public let outputDirectory: URL
         public let services: [String]
         public let dryRun: Bool
-        public let emitSchema: Bool
+        public let emitRawSchema: Bool
+        public let emitProcessedSchema: Bool
 
         public init(
             inputDirectory: URL,
             outputDirectory: URL,
             services: [String],
             dryRun: Bool,
-            emitSchema: Bool
+            emitRawSchema: Bool,
+            emitProcessedSchema: Bool
         ) throws {
             self.inputDirectory = inputDirectory
             self.outputDirectory = outputDirectory
             self.services = services
             self.dryRun = dryRun
-            self.emitSchema = emitSchema
+            self.emitRawSchema = emitRawSchema
+            self.emitProcessedSchema = emitProcessedSchema
         }
     }
 }

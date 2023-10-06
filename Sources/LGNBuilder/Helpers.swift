@@ -16,6 +16,18 @@ struct Profiler {
     }
 }
 
+enum Glob {
+    static var caseSensitiveURIs = false
+}
+
+internal extension String {
+    var safe: Self {
+        self
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined(separator: "_")
+    }
+}
+
 internal extension Dictionary where Key == String {
     subscript<K: RawRepresentable>(key: K) -> Value? where K.RawValue == String {
         get {
@@ -63,4 +75,10 @@ internal extension Dictionary where Key == String, Value == Contract {
 internal extension StringProtocol {
     @usableFromInline
     var firstUppercased: String { prefix(1).uppercased() + dropFirst() }
+}
+
+internal extension Bool {
+    var text: String {
+        self ? "true" : "false"
+    }
 }

@@ -14,14 +14,15 @@ extension Template.Swift {
         import LGNC
         import LGNS
         import Entita
-        import NIO
 
         public extension Services {
             enum \(service.name): Service {
                 \(blocks([
                     "public enum Contracts {}",
                     Template.Swift.transports(from: service.transports),
+                    Template.Swift.caseSensitiveURIs(),
                     Template.Swift.info(from: service.info),
+                    Template.Swift.webSocketURI(from: service),
                     Template.Swift.guaranteeStatuses(from: service.contracts),
                     Template.Swift.contractMap(from: service.contracts),
                     Template.Swift.callbackSetters(from: service.contracts),
@@ -44,6 +45,12 @@ extension Template.Swift {
         """
     }
 
+    static func caseSensitiveURIs() -> String {
+        """
+        public static let caseSensitiveURIs: Bool = \(Glob.caseSensitiveURIs.text)
+        """
+    }
+
     static func transports(from transports: [(Transport, Int)]) -> String {
         """
         public static let transports: [LGNCore.Transport: Int] = [
@@ -59,20 +66,32 @@ extension Template.Swift {
     }
 
     static func info(from info: [(String, String)]) -> String {
+        guard !info.isEmpty else {
+            return ""
+        }
+
         var result = "public static let info: [String: String] = "
 
-        if info.isEmpty {
-            result += "[:]"
+        result += """
+        [
+            \(info
+                .map { k, v in "\"\(k)\": \"\(v)\"," }
+                .joined(separator: "\n")
+                .indented(1)
+            )
+        ]
+        """
+
+        return result
+    }
+
+    static func webSocketURI(from service: Service) -> String {
+        let result: String
+
+        if let webSocketURI = service.WebSocketURI {
+            result = "public static var webSocketURI: String? = \"\(webSocketURI)\""
         } else {
-            result += """
-            [
-                \(info
-                    .map { k, v in "\"\(k)\": \"\(v)\"," }
-                    .joined(separator: "\n")
-                    .indented(1)
-                )
-            ]
-            """
+            result = ""
         }
 
         return result
@@ -118,20 +137,12 @@ extension Template.Swift {
                     return nil
                 }
                 return """
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).FutureClosureWithMeta) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
+                public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBodyCanonical) {
+                    Contracts.\(name).guaranteeCanonical(guaranteeBody)
                 }
 
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).FutureClosure) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
-                }
-
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).NonFutureClosureWithMeta) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
-                }
-
-                public static func guarantee\(name)Contract(_ guaranteeClosure: @escaping Contracts.\(name).NonFutureClosure) {
-                    Contracts.\(name).guarantee(guaranteeClosure)
+                public static func guarantee\(name)Contract(_ guaranteeBody: @escaping Contracts.\(name).GuaranteeBody) {
+                    Contracts.\(name).guarantee(guaranteeBody)
                 }
                 """
             }
@@ -150,8 +161,8 @@ extension Template.Swift {
                     at address: LGNCore.Address,
                     with request: Contracts.\(name).Request,
                     using client: LGNCClient
-                ) -> EventLoopFuture<Contracts.\(name).Response> {
-                    return Contracts.\(name).execute(at: address, with: request, using: client)
+                ) async throws -> Contracts.\(name).Response {
+                    try await Contracts.\(name).execute(at: address, with: request, using: client)
                 }
                 """
             }

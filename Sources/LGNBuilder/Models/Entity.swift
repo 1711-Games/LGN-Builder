@@ -1,3 +1,5 @@
+import LGNLog
+
 struct Entity {
     let name: String
     let fields: [Field]
@@ -19,12 +21,16 @@ struct Entity {
         isMutable: Bool,
         keyDictionary: [String: String],
         isSystem: Bool = false
-    ) {
+    ) throws {
         self.name = name
         self.fields = fields
         self.isMutable = isMutable
         self.keyDictionary = keyDictionary
         self.isSystem = isSystem
+
+        try self.fields.forEach { field in
+            try field.performSanityCheck(entity: self)
+        }
     }
 }
 
@@ -46,6 +52,8 @@ extension Entity: Model {
     }
 
     init(name: String, from input: Any, shared: Shared) throws {
+        Logger.current.debug("Decoding entity '\(name)'")
+
         let errorPrefix = "Could not decode entity '\(name)'"
 
         guard let rawInput = input as? Dict else {
@@ -56,8 +64,7 @@ extension Entity: Model {
 
         if let parentEntityName = rawInput[Key.parentEntity] as? String {
             guard let parentEntity = shared.getEntity(byName: parentEntityName) else {
-                throw E.InvalidSchema("\(errorPrefix): parent entity '\(parentEntityName)' not present in Shared entities"
-                )
+                throw E.InvalidSchema("\(errorPrefix): parent entity '\(parentEntityName)' not present in Shared entities")
             }
             let excludedFields: [String] = rawInput[Key.excludedFields] as? [String] ?? []
             fields = parentEntity.fields.filter { !excludedFields.contains($0.name) }
@@ -67,6 +74,7 @@ extension Entity: Model {
         // entity might have parent entity + excluded fields, and thus there migth be no need to have `Fields` key.
         let rawFields = rawInput[Key.fields] as? Dict ?? Dict()
         for (fieldName, fieldParams) in rawFields {
+            Logger.current.debug("Decoding field '\(fieldName)'")
             let field = try Field(name: fieldName, from: fieldParams, shared: shared)
             if let existingFieldIndex = fields.firstIndex(where: { $0.name == field.name }) {
                 fields[existingFieldIndex] = field
@@ -76,10 +84,10 @@ extension Entity: Model {
         }
 
         guard fields.count > 0 else {
-            throw E.InvalidSchema("\(errorPrefix): there are no fields in this entity")
+            throw E.InvalidSchema("\(errorPrefix): there are no fields in this entity (hint: perhaps you declared fields NOT under 'Fields' key)")
         }
 
-        self = Self(
+        self = try Self(
             name: name,
             fields: fields,
             isMutable: rawInput[Key.isMutable] as? Bool ?? false,
@@ -90,7 +98,7 @@ extension Entity: Model {
 }
 
 extension Entity {
-    static let empty: Self = Self(
+    static let empty: Self = try! Self(
         name: EntityType.System.Empty.rawValue,
         fields: [],
         isMutable: false,
@@ -98,8 +106,24 @@ extension Entity {
         isSystem: true
     )
 
-    static let cookie: Self = Self(
+    static let cookie: Self = try! Self(
         name: EntityType.System.Cookie.rawValue,
+        fields: [],
+        isMutable: false,
+        keyDictionary: [:],
+        isSystem: true
+    )
+
+    static let file: Self = try! Self(
+        name: EntityType.System.File.rawValue,
+        fields: [],
+        isMutable: false,
+        keyDictionary: [:],
+        isSystem: true
+    )
+
+    static let html: Self = try! Self(
+        name: EntityType.System.HTML.rawValue,
         fields: [],
         isMutable: false,
         keyDictionary: [:],

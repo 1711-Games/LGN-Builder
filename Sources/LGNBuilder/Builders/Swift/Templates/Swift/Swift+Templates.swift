@@ -44,6 +44,10 @@ internal extension String {
 
         return result.joined(separator: "\n")
     }
+
+    var removedSingleNewlines: String {
+        self.replacingOccurrences(of: "\n\n", with: "\n")
+    }
 }
 
 internal extension Entity {
@@ -85,7 +89,6 @@ extension Template.Swift {
         import LGNS
         import LGNC
         import LGNP
-        import NIO
 
         public enum Services {
             public enum Shared {}
@@ -116,15 +119,11 @@ extension Template.Swift {
     }
 
     static func prepareType(field: Field, addFuture: Bool = false) -> String {
-        var result = field
+        let result = field
             .type
             .asString
             .replacingOccurrences(of: "Map[", with: "[")
             .replacingOccurrences(of: "List[", with: "[")
-
-        if addFuture && field.canBeFuture {
-            result = "EventLoopFuture<\(result)>"
-        }
 
         return result
     }

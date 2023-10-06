@@ -39,6 +39,13 @@ extension FieldType {
         return false
     }
 
+    var isFile: Bool {
+        if case let .Custom(type) = self {
+            return type.name == EntityType.System.File.rawValue
+        }
+        return false
+    }
+
     var isGETSafe: Bool {
         let result: Bool
 
@@ -89,12 +96,19 @@ extension FieldType {
         default:
             guard let sharedEntity = shared.getEntity(byName: string) else {
                 throw E.InvalidSchema(
-                    "Could not decode custom field type '\(string)': entity '\(string)' not found in shared"
+                    "Could not decode custom field type '\(string)': entity '\(string)' not found in shared "
+                    + "(hint: entity might not have yet been decoded because of file ordering, try reordering YAML definitions)"
                 )
             }
             result = .Custom(sharedEntity)
         }
 
         self = result
+    }
+}
+
+extension FieldType: Equatable {
+    static func == (lhs: FieldType, rhs: FieldType) -> Bool {
+        lhs.asString == rhs.asString
     }
 }

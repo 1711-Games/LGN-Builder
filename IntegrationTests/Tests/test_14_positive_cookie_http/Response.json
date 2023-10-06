@@ -1,7 +1,7 @@
 {
     "errors": {},
     "meta": {
-        "HEADER__Set-Cookie: got key cookie": "got key cookie=got value 38afes7a8; Path=\/"
+        "HEADER__Set-Cookie: got key cookie": "got%20key%20cookie=got%20value%2038afes7a8; Path=\/"
     },
     "result": {
         "pronto": [

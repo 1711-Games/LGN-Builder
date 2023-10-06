@@ -3,11 +3,17 @@ import Foundation
 protocol AnyValidator: Model {
     var name: String { get }
     var message: String? { get }
+
+    func performSanityCheck(entity: Entity) throws
 }
 
 extension AnyValidator {
     var name: String {
         "\(Self.self)Validator"
+    }
+
+    func performSanityCheck(entity: Entity) throws {
+
     }
 
     static func getMessage(from input: Dict) throws -> String? {
@@ -173,13 +179,17 @@ enum Validator {
         }
     }
 
-    class Length: AnyValidator {
+    class Length: AnyValidator, CustomStringConvertible {
         enum Key: String {
             case length = "Length"
         }
 
         let message: String?
         let length: Int
+
+        var description: String {
+            "\(Self.self)(message: \(String(describing: self.message)), length: \(self.length))"
+        }
 
         required init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
@@ -219,20 +229,36 @@ enum Validator {
         let message: String?
         let field: String
 
+        var fieldInternal: String {
+            "\(Field.internalPrefix)_\(self.field)"
+        }
+
+        internal init(message: String?, field: String) {
+            self.message = message
+            self.field = field
+        }
+
         init(from input: Any) throws {
             let errorPrefix = "Could not decode validator \(Self.self)"
 
-            guard let rawInput = input as? Dict else {
-                throw E.InvalidSchema("\(errorPrefix): input is not dictionary (input: \(input))")
+            if let field = input as? String {
+                self.init(message: nil, field: field)
+            } else if let rawInput = input as? Dict {
+                guard let field = rawInput[Key.field] as? String else {
+                    throw E.InvalidSchema("\(errorPrefix): missing or invalid key \(Key.field.rawValue)")
+                }
+                self.init(message: try Self.getMessage(from: rawInput), field: field)
+            } else {
+                throw E.InvalidSchema("\(errorPrefix): input is not dictionary or string (input: \(input))")
             }
+        }
 
-            self.message = try Self.getMessage(from: rawInput)
-
-            guard let field = rawInput[Key.field] as? String else {
-                throw E.InvalidSchema("\(errorPrefix): missing or invalid key \(Key.field.rawValue)")
+        func performSanityCheck(entity: Entity) throws {
+            guard entity.fields.contains(where: { $0.name == self.field }) else {
+                throw E.InvalidSchema(
+                    "Entity '\(entity.name)' doesn't have a field '\(self.field)' for validator '\(self.name)'"
+                )
             }
-
-            self.field = field
         }
     }
 

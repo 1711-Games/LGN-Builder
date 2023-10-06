@@ -1,10 +1,15 @@
+import Foundation
+import LGNLog
+
 typealias Contracts = [(String, Contract)]
 
 struct Contract {
+    enum Diagnostics {}
+
     let name: String
-    let URI: String?
+    let URI: String
     let contentTypes: [ContentType]?
-    var transports: [Transport]
+    let transports: [Transport]
     let generateServicewiseExecutors: Bool
     let generateServicewiseGuarantee: Bool
     let generateServicewiseValidators: Bool
@@ -12,10 +17,20 @@ struct Contract {
     let response: EntityType
     let isPublic: Bool
     let isGETSafe: Bool
+    let isResponseStructured: Bool
+    let isResponseHTML: Bool
+    let isResponseFile: Bool
+
+//    internal lazy var version: String = {
+//        guard let selfStringData = String(describing: self).data(using: .utf8) else {
+//            fatalError("Could not hash contract \(Self.self)")
+//        }
+//        return Data(Insecure.MD5.hash(data: selfStringData)).map { String(format: "%02hhx", $0) }.joined()
+//    }()
 
     init(
         name: String,
-        URI: String?,
+        URI: String,
         contentTypes: [ContentType]?,
         transports: [Transport],
         generateServicewiseExecutors: Bool,
@@ -24,10 +39,13 @@ struct Contract {
         request: EntityType,
         response: EntityType,
         isPublic: Bool,
-        isGETSafe: Bool
+        isGETSafe: Bool,
+        isResponseStructured: Bool,
+        isResponseHTML: Bool,
+        isResponseFile: Bool
     ) {
         self.name = name
-        self.URI = URI
+        self.URI = Glob.caseSensitiveURIs ? URI : URI.lowercased()
         self.contentTypes = contentTypes
         self.transports = transports
         self.generateServicewiseExecutors = generateServicewiseExecutors
@@ -37,6 +55,9 @@ struct Contract {
         self.response = response
         self.isPublic = isPublic
         self.isGETSafe = isGETSafe
+        self.isResponseStructured = isResponseStructured
+        self.isResponseHTML = isResponseHTML
+        self.isResponseFile = isResponseFile
     }
 
     mutating func excludeTransports(_ allowedTransports: [Transport: Int]) -> Self {
@@ -47,6 +68,7 @@ struct Contract {
 extension Contract: Model {
     enum Key: String {
         case transports = "Transports"
+        case forcedURI = "ForcedURI"
         case URI = "URI"
         case contentTypes = "ContentTypes"
         case generateServicewiseExecutors = "GenerateServicewiseExecutors"
@@ -64,6 +86,8 @@ extension Contract: Model {
     }
 
     init(name: String, from input: Any, allowedTransports: [Transport], shared: Shared) throws {
+        Logger.current.debug("Decoding contract '\(name)'")
+
         let errorPrefix = "Could not decode contract '\(name)'"
 
         guard var rawInput = input as? Dict else {
@@ -83,11 +107,16 @@ extension Contract: Model {
         }
 
         if rawInput[Key.transports] == nil {
-            print("Assuming default transports (\(defaultTransports)) for contract '\(name)'")
+            Logger.current.notice("Assuming default transports (\(defaultTransports)) for contract '\(name)'")
             rawInput[Key.transports] = []
         }
 
-        guard let rawTransports = rawInput[Key.transports] as? [Any] else {
+        let rawTransports: [Any]
+        if let _rawTransports = rawInput[Key.transports] as? [Any] {
+            rawTransports = _rawTransports
+        } else if let _rawTransport = rawInput[Key.transports] as? String {
+            rawTransports = [_rawTransport]
+        } else {
             throw E.InvalidSchema("\(errorPrefix): input does not contain '\(Key.transports.rawValue)' key or invalid")
         }
         let transports: [Transport] = try rawTransports.compactMap { rawTransport in
@@ -123,32 +152,24 @@ extension Contract: Model {
         )
 
         let isGETSafe = rawInput[Key.isGETSafe] as? Bool ?? false
-        if isGETSafe {
-            if !transports.contains(.HTTP) {
-                throw E.InvalidSchema(
-                    """
-                    \(errorPrefix): IsGETSafe is set to 'true', but contract doesn't have HTTP transport
-                    """
-                )
-            }
+        try Diagnostics.GETSafe(
+            isGETSafe: isGETSafe,
+            transports: transports,
+            request: request,
+            errorPrefix: errorPrefix
+        )
 
-            let nonGETSafeFields = request.wrapped.fields.filter { !$0.type.isGETSafe }
-            if nonGETSafeFields.count > 0 {
-                throw E.InvalidSchema(
-                    """
-                    \(errorPrefix): IsGETSafe is set to 'true', but contract has non-GET-safe fields: \
-                    \(nonGETSafeFields
-                        .map { "'\($0.name)' (of type '\($0.type.asString)')" }
-                        .joined(separator: ", ")
-                    )
-                    """
-                )
-            }
+        let isResponseHTML = response.isHTML
+        let isResponseFile = response.isFile
+        let isResponseStructured = !isResponseFile && !isResponseHTML
+
+        guard isResponseStructured || isResponseHTML || isResponseFile else {
+            throw E.InvalidSchema("\(errorPrefix): response neither structured, nor HTML, nor file")
         }
 
         self.init(
             name: name,
-            URI: rawInput[Key.URI] as? String,
+            URI: rawInput[Key.forcedURI] as? String ?? rawInput[Key.URI] as? String ?? name,
             contentTypes: contentTypes,
             transports: transports,
             generateServicewiseExecutors: rawInput[Key.generateServicewiseExecutors] as? Bool ?? false,
@@ -157,7 +178,10 @@ extension Contract: Model {
             request: request,
             response: response,
             isPublic: rawInput[Key.isPublic] as? Bool ?? false,
-            isGETSafe: isGETSafe
+            isGETSafe: isGETSafe,
+            isResponseStructured: isResponseStructured,
+            isResponseHTML: isResponseHTML,
+            isResponseFile: isResponseFile
         )
     }
 
@@ -167,6 +191,8 @@ extension Contract: Model {
         shared: Shared,
         errorPrefix: String
     ) throws -> EntityType {
+        Logger.current.debug("Decoding '\(key.rawValue)' entity")
+
         let result: EntityType
 
         guard input[key] != nil else {
@@ -190,5 +216,39 @@ extension Contract: Model {
         }
 
         return result
+    }
+}
+
+extension Contract.Diagnostics {
+    static func GETSafe(
+        isGETSafe: Bool,
+        transports: [Transport],
+        request: EntityType,
+        errorPrefix: String
+    ) throws {
+        guard isGETSafe else {
+            return
+        }
+
+        if !transports.contains(.HTTP) {
+            throw E.InvalidSchema(
+                """
+                \(errorPrefix): IsGETSafe is set to 'true', but contract doesn't have HTTP transport
+                """
+            )
+        }
+
+        let nonGETSafeFields = request.wrapped.fields.filter { !$0.type.isGETSafe }
+        if nonGETSafeFields.count > 0 {
+            throw E.InvalidSchema(
+                """
+                \(errorPrefix): IsGETSafe is set to 'true', but contract has non-GET-safe fields: \
+                \(nonGETSafeFields
+                    .map { "'\($0.name)' (of type '\($0.type.asString)')" }
+                    .joined(separator: ", ")
+                )
+                """
+            )
+        }
     }
 }

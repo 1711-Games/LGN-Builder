@@ -1,3 +1,5 @@
+import LGNLog
+
 final class Shared {
     enum Key: String {
         case entities = "Entities"
@@ -12,6 +14,8 @@ final class Shared {
     }
 
     convenience init(from input: Any) throws {
+        Logger.current.debug("Decoding shared")
+
         guard let rawInput = input as? Dict else {
             self.init(dateFormat: nil)
             return
@@ -20,6 +24,7 @@ final class Shared {
         self.init(dateFormat: rawInput[Key.dateFormat] as? String)
 
         for (entityName, rawEntity) in (rawInput[Key.entities] as? Dict ?? Dict()) {
+            Logger.current.debug("Decoding shared entity '\(entityName)'")
             self.entities.append(try Entity(name: entityName, from: rawEntity, shared: self))
         }
     }

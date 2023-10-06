@@ -7,18 +7,30 @@ extension Template.Swift {
     }
 
     static func contract(from contract: Contract, service: Service, shared: Shared) -> String {
-        """
-        enum \(contract.name): Contract {
+        let className: String
+
+        if contract.isResponseStructured {
+            className = "Structured"
+        } else if contract.isResponseHTML {
+            className = "HTML"
+        } else if contract.isResponseFile {
+            className = "File"
+        } else {
+            className = "Impossible"
+        }
+
+        return """
+        enum \(contract.name): \(className)Contract {
             \(blocks([
                 "public typealias ParentService = Services.\(service.name)",
                 Template.Swift.entityTypealiases(from: contract),
-                "public static let URI = \"\(contract.URI ?? contract.name)\"",
+                "public static let URI = \"\(contract.URI)\"",
                 "public static let transports: [LGNCore.Transport] = [\(contract.transports.map { "." + $0.rawValue }.joined(separator: ", "))]",
-                "public static var guaranteeClosure: Optional<Closure> = nil",
+                contract.isResponseStructured == false ? "public static let isResponseStructured: Bool = false" : "",
+                "public static var _guaranteeBody: Optional<CanonicalGuaranteeBody> = nil",
                 "public static let contentTypes: [LGNCore.ContentType] = \(Template.Swift.contentTypes(from: contract.contentTypes).indented(1))",
                 contract.isGETSafe ? "public static let isGETSafe = true" : "",
                 "",
-                "static let visibility: ContractVisibility = \(contract.isPublic ? ".Public" : ".Private")",
                 Template.Swift.contractEntities(from: contract, shared: shared),
             ], indent: 1, separator: "\n").removingDoubleNewlines())
         }
@@ -31,7 +43,7 @@ extension Template.Swift {
         if let contentTypes = maybeContentTypes {
             result = "[ \(contentTypes.map { "." + $0.rawValue }.joined(separator: ", ")) ]"
         } else {
-            result = "LGNCore.ContentType.allCases"
+            result = "LGNCore.ContentType.allowedHTTPTypes"
         }
 
         return result

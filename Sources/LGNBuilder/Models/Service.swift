@@ -1,12 +1,14 @@
 import Yams
+import LGNLog
 
-let defaultTransports: [(String, Any)] = [(Transport.LGNS.rawValue, 1711)]
+let defaultTransports: [(String, Any)] = [(Transport.HTTP.rawValue, 8080)]
 
 struct Service {
     let name: String
     let info: [(String, String)]
     let transports: [(Transport, Int)]
     let contracts: Contracts
+    let WebSocketURI: String?
 }
 
 extension Service: Model {
@@ -42,7 +44,7 @@ extension Service: Model {
         self.info = info
 
         if rawInput[Key.transports] == nil {
-            print("Assuming default transports (\(defaultTransports)) for service '\(name)'")
+            Logger.current.notice("Assuming default transports (\(defaultTransports)) for service '\(name)'")
             rawInput[Key.transports] = defaultTransports
         }
         guard let rawTransports = rawInput[Key.transports] as? Dict else {
@@ -64,13 +66,25 @@ extension Service: Model {
         }
         self.contracts = try rawContracts.map { contractName, rawContract in
             (
-                contractName,
+                contractName.safe,
                 try Contract(
-                    name: contractName,
+                    name: contractName.safe,
                     from: rawContract,
                     allowedTransports: transports.map { $0.0 },
                     shared: shared
                 )
+            )
+        }
+
+        self.WebSocketURI = rawInput["WebSocketURI"] as? String
+
+        let webSocketContracts = self.contracts.map(\.1).filter { $0.transports.contains(.WebSocket) }
+        if self.WebSocketURI == nil && webSocketContracts.count > 0 {
+            throw E.InvalidSchema(
+                """
+                Service '\(self.name)' has WebSocket contracts (\(webSocketContracts.map(\.name))), \
+                but 'webSocketURI' field is empty
+                """
             )
         }
     }
