@@ -9,7 +9,7 @@ let package = Package(
         .executable(name: "LGNBuilder", targets: ["LGNBuilder"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", .upToNextMinor(from: "0.2.0")),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.3"),
         .package(url: "https://github.com/kirilltitov/Yams", branch: "dictionary-as-pairs-mode"),
         .package(url: "https://github.com/1711-Games/LGN-Log", .upToNextMinor(from: "0.4.0")),
     ],
