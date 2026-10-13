@@ -115,7 +115,7 @@ extension Template.Swift {
 
     static func contractMap(from contracts: Contracts) -> String {
         """
-        public static let contractMap: [String: AnyContract.Type] = [
+        public static let contractMap: [String: any Contract.Type] = [
             \(
                 contracts.isEmpty
                     ? ":"
